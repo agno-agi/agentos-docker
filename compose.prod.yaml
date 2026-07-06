@@ -9,7 +9,8 @@
 # platform over its public URL.
 #
 # The `!reset` tag (Docker Compose v2.24+) removes the dev bind mount instead
-# of merging with it.
+# of merging with it; `!override` (v2.24.4+) replaces the ports list below so
+# Postgres rebinds to 127.0.0.1 instead of gaining a second mapping.
 services:
   agentos-api:
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000

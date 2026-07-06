@@ -190,7 +190,7 @@ Invoke a skill by name (`/extend-agent`) or just describe the task — Claude Co
 | `RUNTIME_ENV` | no | `prd` | `dev` disables JWT. `compose.yaml` sets it to `dev` for local; `compose.prod.yaml` sets `prd` — never hand-set `dev` on a production host, or the platform serves unauthenticated. |
 | `JWT_VERIFICATION_KEY` | prd | — | Public key from os.agno.com. Required when `RUNTIME_ENV=prd` and `authorization=True`, unless `JWT_JWKS_FILE` is set. |
 | `JWT_JWKS_FILE` | prd | — | Path to a JWKS file; alternative to `JWT_VERIFICATION_KEY` for production JWT verification. |
-| `AGENTOS_URL` | no | `http://127.0.0.1:8000` | Scheduler base URL — cron triggers reach AgentOS over this. In production, set it in `.env` to your public URL (domain or tunnel); `compose.prod.yaml` passes it through. Left at the localhost default in prod, scheduled jobs silently never fire. |
+| `AGENTOS_URL` | no | `http://127.0.0.1:8000` | Scheduler base URL — cron triggers reach AgentOS over this. In production, set it in `.env` to your public URL (domain or tunnel); `compose.prod.yaml` passes it through. Left at the localhost default in prod, the daily deployment check flags the platform as misconfigured and hosted chat apps have no connector URL to point at. |
 | `ENABLE_DEPLOY_CHECK` | no | `True` | The reference deployment-check cron (`app/schedules.py`) runs daily by default. Set `False` to disable; the workflow stays runnable on demand regardless. |
 | `ENABLE_SCHEDULED_EVALS` | no | `False` | If `True`, schedules the run-evals workflow daily. Off by default because it uses model calls. |
 | `EVALS_TAG` | no | `smoke` | Eval tag run by the run-evals workflow. |
@@ -250,7 +250,7 @@ This repo is the self-hosted Docker sibling of the `agentos-*` deployment family
 The **Docker-specific deploy layer** — what a sibling template swaps out — is exactly:
 
 - [`compose.prod.yaml`](compose.prod.yaml)
-- the "Running in production on your own host" prose here and in the README
+- the "Running in production on your own host" prose here and the README's "Run in production" section
 
 This is the family's smallest deploy layer — there is no provider CLI, no provisioning script, and nothing to tear down. Siblings that target a cloud swap in a provider config plus `scripts/<provider>/{up,env-sync,redeploy}.sh`.
 
@@ -262,7 +262,7 @@ When editing, keep that boundary crisp: platform behavior belongs in the core, p
 docker compose -f compose.yaml -f compose.prod.yaml up -d --build
 ```
 
-The [`compose.prod.yaml`](compose.prod.yaml) override switches `RUNTIME_ENV` to `prd` (JWT auth on), drops the dev bind mount and hot reload so the container runs the code baked into the image, reads `AGENTOS_URL` from `.env`, and rebinds Postgres to loopback so the database is not internet-reachable (set a real `DB_PASS` in `.env` — the dev default is `ai`). Both services already carry `restart: unless-stopped`, so the platform survives reboots as long as Docker starts on boot. The override uses the `!reset`/`!override` merge tags, which need Docker Compose v2.24+.
+The [`compose.prod.yaml`](compose.prod.yaml) override switches `RUNTIME_ENV` to `prd` (JWT auth on), drops the dev bind mount and hot reload so the container runs the code baked into the image, reads `AGENTOS_URL` from `.env`, and rebinds Postgres to loopback so the database is not internet-reachable (set a real `DB_PASS` in `.env` — the dev default is `ai`). Both services already carry `restart: unless-stopped`, so the platform survives reboots as long as Docker starts on boot. The override uses the `!reset`/`!override` merge tags, which need Docker Compose v2.24.4+.
 
 JWT auth is on by default in prd and the app refuses to serve without a key. Mint one at os.agno.com (Connect OS → Live with your public URL, name it `Live AgentOS`, then Settings → OS & Security → Token-Based Authorization (JWT)) and paste the PEM into `.env` **quoted**, so Docker Compose reads the multi-line value as one variable:
 

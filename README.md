@@ -93,11 +93,11 @@ It auto-detects Claude Code, Claude Desktop, Codex, and Cursor, registers `http:
 
 This sibling of the template family carries no cloud-provider layer at all: production is the same Docker Compose you already ran locally, plus the [`compose.prod.yaml`](compose.prod.yaml) override — on any host you control. A VPS, a home server, an office box, this laptop. If you'd rather have a managed platform provision the database and the URL for you, use a cloud sibling of this template ([agentos-railway](https://github.com/agno-agi/agentos-railway) is the reference).
 
-> **Prerequisite:** a host with Docker (Compose v2.24 or newer — the prod override uses the `!reset`/`!override` merge tags), and a way for the internet to reach port 8000 on it — a domain with a reverse proxy, or a tunnel.
+> **Prerequisite:** a host with Docker (Compose v2.24.4 or newer — the prod override uses the `!reset`/`!override` merge tags), and a way for the internet to reach port 8000 on it — a domain with a reverse proxy, or a tunnel.
 
 ### 1. Get a public URL
 
-The platform needs a public HTTPS URL for two things: hosted chat apps (Claude, ChatGPT) reaching `/mcp`, and the scheduler reaching its own API. Any of these work:
+The platform needs a public HTTPS URL for two things: hosted chat apps (Claude, ChatGPT) reaching `/mcp`, and `AGENTOS_URL` — the address the platform advertises as its own. Any of these work:
 
 ```sh
 # Cloudflare Tunnel — free; quick tunnels get a random URL, named tunnels a stable one
@@ -122,7 +122,9 @@ AGENTOS_URL=https://<your-public-url>
 DB_PASS=<generate a strong one>
 ```
 
-`AGENTOS_URL` is how the scheduler reaches the platform. Left unset, it defaults to localhost and scheduled jobs silently never fire in production. `DB_PASS` replaces the dev default (`ai`) — the override keeps Postgres bound to loopback, but a real password is still the floor for a production database.
+`AGENTOS_URL` is the address the platform advertises as its own. Left unset, the daily deployment check flags the platform as misconfigured, and anything that needs the public URL — chat-app connectors, hosted MCP clients — has nothing to point at. `DB_PASS` replaces the dev default (`ai`) — the override keeps Postgres bound to loopback, but a real password is still the floor for a production database.
+
+One catch on a host that already ran the dev compose: Postgres reads the password only when the `pgdata` volume is first initialized, so changing `DB_PASS` in `.env` won't take on its own — the database keeps the old password and the API blocks waiting for it. Either change it in place to match — `docker compose exec agentos-db psql -U ai -c "ALTER USER ai WITH PASSWORD '<new>';"` — or reinitialize with `docker compose down -v` (wipes all platform data).
 
 ### 3. Production Auth
 
