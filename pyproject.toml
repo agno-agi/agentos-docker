@@ -1,7 +1,7 @@
 [project]
 name = "agentos-docker"
 version = "1.0.0"
-description = "AgentOS — the agent backend for every frontend, built on Agno. Self-hosted Docker sibling of the agentos template family."
+description = "AgentOS — one agent backend for every frontend, built on Agno. Self-hosted Docker sibling of the agentos template family."
 requires-python = ">=3.12,<4"
 readme = "README.md"
 license-files = ["LICENSE"]
