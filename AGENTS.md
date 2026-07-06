@@ -286,7 +286,7 @@ docker compose up -d --build
 
 # Bump agno (alpha, rc, and final releases are the same flow)
 # 1. Edit the agno pin in pyproject.toml
-./scripts/generate_requirements.sh   # agnoctl follows automatically via agno's requirement
+./scripts/generate_requirements.sh agnoctl   # agno follows the pin; agnoctl must be named — agno only floors it at the previous release
 docker compose up -d --build
 ./scripts/validate.sh && python -m evals --tag smoke
 
