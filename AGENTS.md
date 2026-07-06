@@ -35,7 +35,7 @@ Shared:
 | [`app/registry.py`](app/registry.py) | Safe Studio registry used by Agent Builder — docs MCP, web tools, utility functions, reference agents. |
 | [`app/config.yaml`](app/config.yaml) | Quick prompts per agent (keyed by agent `id`). |
 | [`agents/web_search.py`](agents/web_search.py) | Reference agent — direct tools (Parallel SDK or MCP). |
-| [`agents/platform_manager.py`](agents/platform_manager.py) | Flagship agent — codebase context provider + read-only runtime tools (eval history, deployment checks, schedules, components). |
+| [`agents/platform_manager.py`](agents/platform_manager.py) | Flagship agent — codebase context provider + read-only runtime tools (eval history, deployment-check reports + on-demand diagnostic run, schedules, components). |
 | [`agents/agent_builder.py`](agents/agent_builder.py) | Reference agent — creates, edits, and publishes agents, teams, and workflows through StudioTools immediately; only deletes keep a HITL confirmation gate. |
 | [`workflows/deployment_check.py`](workflows/deployment_check.py) | Reference workflow — a deterministic `Step` that checks DB, auth, scheduler URL, MCP reachability, Slack config, schedule flags, and component imports; imported into `app/main.py` and passed to `AgentOS(workflows=[...])`. |
 | [`workflows/run_evals.py`](workflows/run_evals.py) | Optional workflow — runs a tagged subset of the eval suite and returns a compact report. Registered but not scheduled unless `ENABLE_SCHEDULED_EVALS=True`. |
@@ -223,9 +223,9 @@ See [agno scheduler docs](https://docs.agno.com/agent-os/scheduler) for the cron
 
 ## Platform Manager
 
-The platform's ops surface is the Platform Manager agent ([`agents/platform_manager.py`](agents/platform_manager.py)) — read-only by design. It combines the codebase context provider (how the platform is wired) with runtime tools over Postgres (eval history, deployment-check reports, schedules, runtime-built components), diagnoses issues across both lenses, and hands off fixes: code changes go to coding agents via the skills in [`.agents/skills/`](.agents/skills/), component changes go to Agent Builder.
+The platform's ops surface is the Platform Manager agent ([`agents/platform_manager.py`](agents/platform_manager.py)) — read-only by design. It combines the codebase context provider (how the platform is wired) with runtime tools over Postgres (eval history, deployment-check reports — plus running the deployment check on demand when none exists — schedules, runtime-built components), diagnoses issues across both lenses, and hands off fixes: code changes go to coding agents via the skills in [`.agents/skills/`](.agents/skills/), component changes go to Agent Builder.
 
-Keep it read-only. Least privilege is the point: an ops surface that only reads can't misfire, needs no confirmation gates, and stays safe to expose from any frontend. Future read tools (trace summaries, `git diff` inspection) belong here; mutations belong with coding agents through git, or behind Agent Builder's delete gate — which an MCP client can now approve in-chat via `continue_run`.
+Keep it read-only. Least privilege is the point: an ops surface that only reads can't misfire, needs no confirmation gates, and stays safe to expose from any frontend. **Diagnostics are the one sanctioned trigger**: Platform Manager may run observations that are deterministic, free, idempotent, and non-mutating — `run_deployment_check` qualifies (it re-points the same checks the daily cron runs, and the run persists so report history stays coherent); run-evals does not (model spend), and anything that writes platform state never does. Future read tools (trace summaries, `git diff` inspection) belong here; mutations belong with coding agents through git, or behind Agent Builder's delete gate — which an MCP client can now approve in-chat via `continue_run`.
 
 ## MCP interface
 
