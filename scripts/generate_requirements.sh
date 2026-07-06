@@ -7,6 +7,7 @@
 #    Usage:
 #      ./scripts/generate_requirements.sh           # Generate
 #      ./scripts/generate_requirements.sh upgrade   # Generate with upgrade
+#      ./scripts/generate_requirements.sh <pkg>...  # Refresh only these pins
 #
 ############################################################################
 
@@ -31,6 +32,19 @@ if [[ "$1" = "upgrade" ]]; then
     echo ""
     UV_CUSTOM_COMPILE_COMMAND="./scripts/generate_requirements.sh upgrade" \
         uv pip compile ${REPO_ROOT}/pyproject.toml --no-cache --upgrade -o ${REPO_ROOT}/requirements.txt
+elif [[ $# -gt 0 ]]; then
+    # Refresh only the named packages; every other pin stays put. Needed when a pin
+    # is held by a floor rather than the pyproject pin (agno floors agnoctl at the
+    # previous published release, so a plain regen never moves it).
+    UPGRADE_FLAGS=()
+    for pkg in "$@"; do
+        UPGRADE_FLAGS+=("--upgrade-package" "$pkg")
+    done
+    echo -e "    ${DIM}Mode: refresh ($*)${NC}"
+    echo -e "    ${DIM}> uv pip compile pyproject.toml --no-cache ${UPGRADE_FLAGS[*]} -o requirements.txt${NC}"
+    echo ""
+    UV_CUSTOM_COMPILE_COMMAND="./scripts/generate_requirements.sh" \
+        uv pip compile ${REPO_ROOT}/pyproject.toml --no-cache "${UPGRADE_FLAGS[@]}" -o ${REPO_ROOT}/requirements.txt
 else
     echo -e "    ${DIM}Mode: standard${NC}"
     echo -e "    ${DIM}> uv pip compile pyproject.toml --no-cache -o requirements.txt${NC}"

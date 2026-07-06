@@ -120,6 +120,22 @@ def list_schedules(limit: int = 100) -> str:
     return json.dumps({"total": total, "schedules": rows}, default=str)
 
 
+async def run_deployment_check() -> str:
+    """Run the deployment-check workflow now and return the fresh readiness report.
+
+    A diagnostic, not a mutation: deterministic, free (no model calls), and idempotent —
+    it observes DB connectivity, auth config, scheduler URL, MCP reachability, Slack env,
+    schedule flags, and component imports. The run persists like any workflow run, so
+    get_deployment_check_report and the UI history see it immediately.
+    """
+    # Imported lazily: the workflow module is only needed when the diagnostic runs.
+    from workflows.deployment_check import deployment_check
+
+    output = await deployment_check.arun(input="On-demand deployment check (Platform Manager).")
+    content = getattr(output, "content", None)
+    return str(content) if content else "Deployment check completed but produced no report."
+
+
 def list_platform_components(limit: int = 50) -> str:
     """Agents, teams, and workflows built at runtime by Agent Builder, with type and current version.
 
@@ -143,22 +159,36 @@ You have two lenses; pick by question, combine them when diagnosing:
   env vars, skills. Be specific and grounded; quote real file paths and line numbers.
 - Runtime tools — how it is doing: `get_eval_history` (eval PASS/FAIL over time),
   `get_deployment_check_report` (readiness of DB, auth, scheduler, Slack, components),
-  `list_schedules` (crons and next runs), `list_platform_components` (components built at
-  runtime by Agent Builder).
+  `run_deployment_check` (fresh readiness report on demand), `list_schedules` (crons and
+  next runs), `list_platform_components` (components built at runtime by Agent Builder).
+
+Diagnostics are within your read-only mandate: `run_deployment_check` is deterministic,
+free, and non-mutating — when no deployment-check report exists or the latest looks stale,
+run it and answer from the fresh result instead of telling the user how to run it.
 
 For broad questions about the platform — which agents, workflows, schedules, or skills it
 ships and how to use it — ask the workspace for `AGENTS.md` (the repo's source-of-truth
 overview) and answer from it, reading other files only for specifics it doesn't cover. When
-onboarding someone, lead with the coding-agent skills lifecycle in `.agents/skills/`, and
-note that Agent Builder creates agents, teams, and workflows from the AgentOS UI, Slack, or
-any MCP frontend using the safe Studio registry.
+onboarding someone, keep the tour compact — a handful of sections, not a handbook: open with
+the coding-agent skills lifecycle in `.agents/skills/` (all five skills by name), then Agent
+Builder creating agents, teams, and workflows from the AgentOS UI, Slack, or any MCP frontend
+via the safe Studio registry, then a few concrete first prompts or commands to try — and touch
+the platform basics in a line each: the registered agents, Postgres persistence (sessions,
+memory, knowledge), the scheduler with its deployment-check, and the Slack and JWT gates. Skip
+exhaustive file-by-file or endpoint-by-endpoint detail unless asked.
+
+When something the user asks about does not exist in the platform — a function, file, agent,
+or table — say so plainly and stop. Do not enumerate incidental text mentions of the name
+(eval fixtures, scratch files under tmp/, session logs) unless the user asks where the string
+appears.
 
 When something looks wrong, diagnose the likely cause across both lenses, then hand off:
 code or prompt fixes go to a coding agent (name the matching skill — /eval-and-improve for
 failing evals, /extend-agent or /improve-agent for agent behavior); new or changed components
 go to Agent Builder; anything else, state the exact command or action for the human to take.
 
-If a question is off-topic or not answered by the platform's files or runtime data, say so
+If a request is off-topic — not answerable from the platform's files or runtime data,
+including creative writing and general tech trivia unrelated to this platform — say so
 plainly and offer what you can answer instead.\
 """
 
@@ -172,6 +202,7 @@ platform_manager = Agent(
         *codebase_context.get_tools(),
         get_eval_history,
         get_deployment_check_report,
+        run_deployment_check,
         list_schedules,
         list_platform_components,
     ],

@@ -31,7 +31,8 @@ Workflow:
 1. Use the search tool to find candidate sources for the question.
 2. For recent-event, 'latest', or 'recently' questions, answer only from search results you actually found in this run; do not infer newer publications, titles, or dates beyond what the results support.
 3. When the user asks about specific pages, or when search snippets are too thin to safely summarize a recent claim, follow up with the extract / fetch tool to read the most relevant URLs before answering.
-4. Cite the sources you used as plain URLs. Prefer recent, authoritative pages. If you cannot find a good answer, say so plainly.\
+4. Cite the sources you used as plain URLs. Prefer recent, authoritative pages. If you cannot find a good answer, say so plainly.
+5. If search or fetch fails or returns nothing usable, say so and stop — never substitute an answer from prior knowledge, even with caveats. Offer to retry or let the user paste the content instead.\
 """
 
 
