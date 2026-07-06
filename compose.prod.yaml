@@ -1,0 +1,30 @@
+# Production override — same platform, JWT auth on, no dev conveniences.
+#
+#   docker compose -f compose.yaml -f compose.prod.yaml up -d --build
+#
+# Switches RUNTIME_ENV to prd (JWT auth on — the app refuses to serve without
+# JWT_VERIFICATION_KEY or JWT_JWKS_FILE; see "Run in production" in README.md),
+# drops the dev bind mount and hot reload so the container runs the code baked
+# into the image, and reads AGENTOS_URL from .env so the scheduler reaches the
+# platform over its public URL.
+#
+# The `!reset` tag (Docker Compose v2.24+) removes the dev bind mount instead
+# of merging with it.
+services:
+  agentos-api:
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    volumes: !reset []
+    environment:
+      RUNTIME_ENV: prd
+      AGNO_DEBUG: "False"
+      AGENTOS_URL: ${AGENTOS_URL:-http://127.0.0.1:8000}
+
+  # In dev, Postgres is published on all interfaces for GUI/psql convenience.
+  # In production that would expose the database to the internet (Docker's
+  # iptables rules bypass ufw-style host firewalls), so bind it to loopback:
+  # containers still reach it over the compose network, and host-side tools
+  # (psql, python -m evals) still connect via localhost. Set a strong DB_PASS
+  # in .env — the dev default is ai/ai.
+  agentos-db:
+    ports: !override
+      - "127.0.0.1:5432:5432"

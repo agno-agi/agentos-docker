@@ -1,10 +1,10 @@
-# AgentOS — Railway template
+# AgentOS — Docker template
 
 This file is the source of truth for any agent (Claude Code, Codex, others) working in this repo. `CLAUDE.md` is a symlink to this file — edit one, both update.
 
 ## Project Overview
 
-**AgentOS — the agent backend for every frontend.** An agent server built on [Agno](https://docs.agno.com) that attaches to any client: **REST** for programmatic use, **chat interfaces** for humans (Slack is wired in; WhatsApp/Telegram/Discord mirror the same pattern), and **MCP** at `/mcp` for AI apps (claude.ai, ChatGPT, Cursor, Claude Code) — which work *through* the platform, not just on it. The repo itself is designed for coding agents to build and extend. Two flagship agents — Agent Builder (creates agents, teams, and workflows) and Platform Manager (understands, monitors, and explains the platform) — plus WebSearch as the simplest sample agent to copy. Postgres (pgvector) handles persistence for sessions, memory, and knowledge. Runs locally via Docker; this template deploys to Railway with a single script and is the reference sibling of the `agentos-*` deployment family — see [Portable core vs. deploy layer](#portable-core-vs-deploy-layer).
+**AgentOS — the agent backend for every frontend.** An agent server built on [Agno](https://docs.agno.com) that attaches to any client: **REST** for programmatic use, **chat interfaces** for humans (Slack is wired in; WhatsApp/Telegram/Discord mirror the same pattern), and **MCP** at `/mcp` for AI apps (claude.ai, ChatGPT, Cursor, Claude Code) — which work *through* the platform, not just on it. The repo itself is designed for coding agents to build and extend. Two flagship agents — Agent Builder (creates agents, teams, and workflows) and Platform Manager (understands, monitors, and explains the platform) — plus WebSearch as the simplest sample agent to copy. Postgres (pgvector) handles persistence for sessions, memory, and knowledge. Runs locally via Docker; this template also runs production with Docker — on any host you control, with no cloud provider in between — and is the self-hosted sibling of the `agentos-*` deployment family — see [Portable core vs. deploy layer](#portable-core-vs-deploy-layer).
 
 ## Architecture
 
@@ -47,7 +47,7 @@ Shared:
 | [`.agents/skills/`](.agents/skills/) | Dev-time **coding-agent workflows** (`create-new-agent`, `extend-agent`, `improve-agent`, `eval-and-improve`, `review-and-improve`) — slash commands coding agents run *on this repo*. `.claude/skills` is a committed symlink into it — see [Working with coding agents](#working-with-coding-agents). |
 | [`README.md`](README.md) | Public entry point — leads with the copy-paste setup prompt that takes a coding agent from clone to connected. |
 | [`compose.yaml`](compose.yaml) | Docker Compose for local development. |
-| [`railway.json`](railway.json) | Railway deploy config (Docker + 1 replica + 4Gi/2vCPU). |
+| [`compose.prod.yaml`](compose.prod.yaml) | Production override — `RUNTIME_ENV=prd` (JWT on), no bind mount or hot reload, `AGENTOS_URL` from `.env`. |
 
 ## Development Setup
 
@@ -187,10 +187,10 @@ Invoke a skill by name (`/extend-agent`) or just describe the task — Claude Co
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `OPENAI_API_KEY` | yes | — | OpenAI key for models + embeddings. |
-| `RUNTIME_ENV` | no | `prd` | `dev` disables JWT. Compose sets this to `dev` for local — never put it in an env file that syncs to Railway, or production deploys unauthenticated. |
+| `RUNTIME_ENV` | no | `prd` | `dev` disables JWT. `compose.yaml` sets it to `dev` for local; `compose.prod.yaml` sets `prd` — never hand-set `dev` on a production host, or the platform serves unauthenticated. |
 | `JWT_VERIFICATION_KEY` | prd | — | Public key from os.agno.com. Required when `RUNTIME_ENV=prd` and `authorization=True`, unless `JWT_JWKS_FILE` is set. |
 | `JWT_JWKS_FILE` | prd | — | Path to a JWKS file; alternative to `JWT_VERIFICATION_KEY` for production JWT verification. |
-| `AGENTOS_URL` | no | `http://127.0.0.1:8000` | Scheduler base URL — cron triggers reach AgentOS over this. `scripts/railway/up.sh` auto-sets it to the created Railway domain (and writes it back into your env file); only set it by hand for custom domains or tunnels. Left at the localhost default in prod, scheduled jobs silently never fire. |
+| `AGENTOS_URL` | no | `http://127.0.0.1:8000` | Scheduler base URL — cron triggers reach AgentOS over this. In production, set it in `.env` to your public URL (domain or tunnel); `compose.prod.yaml` passes it through. Left at the localhost default in prod, scheduled jobs silently never fire. |
 | `ENABLE_DEPLOY_CHECK` | no | `True` | The reference deployment-check cron (`app/schedules.py`) runs daily by default. Set `False` to disable; the workflow stays runnable on demand regardless. |
 | `ENABLE_SCHEDULED_EVALS` | no | `False` | If `True`, schedules the run-evals workflow daily. Off by default because it uses model calls. |
 | `EVALS_TAG` | no | `smoke` | Eval tag run by the run-evals workflow. |
@@ -245,29 +245,36 @@ For Discord, Telegram, WhatsApp, and custom UIs, mirror the Slack conditional pa
 
 ## Portable core vs. deploy layer
 
-This repo is the Railway sibling of the `agentos-*` deployment family (agentos-docker, agentos-aws, agentos-fly, agentos-gcp, agentos-azure, agentos-modal). Everything that defines the platform is **portable core — identical across the family**: `agents/`, `app/`, `db/`, `workflows/`, `evals/`, the MCP server wiring, the interfaces, and the coding-agent skills in `.agents/skills/`. `Dockerfile`, `compose.yaml`, and `scripts/entrypoint.sh` are shared local-dev/runtime infra, also not deployment-specific.
+This repo is the self-hosted Docker sibling of the `agentos-*` deployment family ([agentos-railway](https://github.com/agno-agi/agentos-railway) is the reference; agentos-aws, agentos-fly, agentos-gcp, agentos-azure, agentos-modal cover the clouds). Everything that defines the platform is **portable core — identical across the family**: `agents/`, `app/`, `db/`, `workflows/`, `evals/`, the MCP server wiring, the interfaces, and the coding-agent skills in `.agents/skills/`. `Dockerfile`, `compose.yaml`, and `scripts/entrypoint.sh` are shared local-dev/runtime infra, also not deployment-specific.
 
-The **Railway-specific deploy layer** — what a sibling template swaps out — is exactly:
+The **Docker-specific deploy layer** — what a sibling template swaps out — is exactly:
 
-- [`railway.json`](railway.json)
-- [`scripts/railway/`](scripts/railway/) (`up.sh`, `env-sync.sh`, `redeploy.sh`)
-- the "Deploying to Railway" prose here and in the README
+- [`compose.prod.yaml`](compose.prod.yaml)
+- the "Running in production on your own host" prose here and in the README
 
-When editing, keep that boundary crisp: platform behavior belongs in the core, Railway mechanics belong in the deploy layer, and nothing in the core should import from or depend on it.
+This is the family's smallest deploy layer — there is no provider CLI, no provisioning script, and nothing to tear down. Siblings that target a cloud swap in a provider config plus `scripts/<provider>/{up,env-sync,redeploy}.sh`.
 
-## Deploying to Railway
+When editing, keep that boundary crisp: platform behavior belongs in the core, production-hosting mechanics belong in the deploy layer, and nothing in the core should import from or depend on it.
+
+## Running in production on your own host
 
 ```bash
-./scripts/railway/up.sh        # provision Postgres + agent-os service
-./scripts/railway/env-sync.sh  # sync .env.production (default) or .env
-./scripts/railway/redeploy.sh  # redeploy after code changes
+docker compose -f compose.yaml -f compose.prod.yaml up -d --build
 ```
 
-`up.sh` creates the domain before deploying and sets `AGENTOS_URL` to it (on Railway and in your env file), so the scheduler is reachable in prod out of the box.
+The [`compose.prod.yaml`](compose.prod.yaml) override switches `RUNTIME_ENV` to `prd` (JWT auth on), drops the dev bind mount and hot reload so the container runs the code baked into the image, reads `AGENTOS_URL` from `.env`, and rebinds Postgres to loopback so the database is not internet-reachable (set a real `DB_PASS` in `.env` — the dev default is `ai`). Both services already carry `restart: unless-stopped`, so the platform survives reboots as long as Docker starts on boot. The override uses the `!reset`/`!override` merge tags, which need Docker Compose v2.24+.
 
-JWT auth is on by default. After creating the Railway domain, `up.sh` pauses if `JWT_VERIFICATION_KEY` or `JWT_JWKS_FILE` is missing, so you can connect the OS at os.agno.com (Connect OS → Live, name it `Live AgentOS`, then Settings → OS & Security → Token-Based Authorization (JWT)), paste the full PEM into the prompt, and let the script save it to the env file. Live AgentOS Connections are a paid feature; use `PLATFORM30` to get 1 month off. The script re-reads the env file and pushes the key before the first deploy. If you skip the prompt or run non-interactively, add the key later and run `./scripts/railway/env-sync.sh`.
+JWT auth is on by default in prd and the app refuses to serve without a key. Mint one at os.agno.com (Connect OS → Live with your public URL, name it `Live AgentOS`, then Settings → OS & Security → Token-Based Authorization (JWT)) and paste the PEM into `.env` **quoted**, so Docker Compose reads the multi-line value as one variable:
 
-The Railway *project* is `agentos-railway`; the app *service* is `agent-os`.
+```sh
+JWT_VERIFICATION_KEY="-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkq...
+-----END PUBLIC KEY-----"
+```
+
+Live AgentOS Connections are a paid feature; use `PLATFORM30` to get 1 month off. `/health` and `/docs` stay public in prd (they are on the auth middleware's excluded-route list); everything else requires a token.
+
+The public URL comes from whatever you put in front of the host — a domain + reverse proxy, or a tunnel (cloudflared, ngrok, `tailscale funnel`). Set it as `AGENTOS_URL` in `.env` so the scheduler can reach the platform, and use `https://<public-url>/mcp` as the connector URL in chat apps. The full walkthrough lives in the README's [Run in production](README.md#run-in-production) section.
 
 ## Common Tasks
 
@@ -286,8 +293,8 @@ docker compose up -d --build
 # Build a multi-arch image (maintainer-only)
 ./scripts/build_image.sh
 
-# Tail Railway logs
-railway logs --service agent-os
+# Tail production logs (same host, prod override)
+docker compose -f compose.yaml -f compose.prod.yaml logs -f agentos-api
 ```
 
 ## Documentation Links
