@@ -133,9 +133,10 @@ CASES: tuple[Case, ...] = (
             "Covers the coding-agent lifecycle in `.agents/skills/`, naming all "
             "five skills: `/create-new-agent`, `/extend-agent`, `/improve-agent`, "
             "`/eval-and-improve`, and `/review-and-improve`. Also mentions that `agent-builder` can "
-            "create agentic components using the safe Studio registry. Briefly mentions "
-            "the registered agents, quick prompts, the deployment-check workflow or scheduler, "
-            "persistence, and Slack/JWT gates. Includes concrete next prompts or commands. Stays "
+            "create agentic components using the safe Studio registry. Beyond that, touches at "
+            "least three of: the registered agents, quick prompts, the deployment-check workflow "
+            "or scheduler, persistence, Slack/JWT gates (covering all five is not required — a "
+            "compact tour may trim some). Includes concrete next prompts or commands. Stays "
             "compact — no exhaustive file-by-file walkthrough or long code snippets. Does not answer "
             "as generic AgentOS documentation."
         ),
