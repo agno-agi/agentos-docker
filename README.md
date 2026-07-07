@@ -1,11 +1,11 @@
 # AgentOS: the agent backend for every frontend
 
-AgentOS is a high-performance runtime that gives you one agent server for every client. Build your agents, teams, and workflows once; use the same system across every surface:
+AgentOS is a secure, scalable service that connects your agents to any frontend. Build your agents and workflows once; use the same system across every surface:
 
 1. **Your product.** Add agents to your own application: AgentOS serves a full REST API with 80+ endpoints — runs, sessions, memory, knowledge, and evals.
 2. **Chat interfaces.** Chat with your agents through Slack, WhatsApp, Telegram, Discord. Slack is set up; for the rest, see [interfaces](https://docs.agno.com/agent-os/interfaces/overview).
-3. **AI apps.** Let Claude, ChatGPT, Cursor, and Claude Code use your AgentOS through the MCP server at `/mcp`.
-4. **Coding agents.** Claude Code, Codex, and Cursor drive the full agent development lifecycle with the skills in [`.agents/skills/`](.agents/skills/).
+3. **AI apps.** Let Claude, ChatGPT, Cursor, and Claude Code use your agents through the MCP server at `/mcp`.
+4. **Coding agents.** Claude Code, Codex, and Cursor run the full agent development lifecycle with the skills in [`.agents/skills/`](.agents/skills/).
 5. **AgentOS UI.** The control plane for your agent-platform at [os.agno.com](https://os.agno.com?utm_source=github&utm_medium=example-repo&utm_campaign=agentos-docker&utm_content=agentos-docker&utm_term=docker). Chat with agents, inspect sessions, traces, memory, and evals.
 
 <img width="3298" height="2412" alt="AgentOS" src="https://github.com/user-attachments/assets/40a53a42-d4d2-402b-8e92-742609207957" />
@@ -16,7 +16,7 @@ Built on [Agno](https://docs.agno.com). Everything runs on infrastructure you co
 
 This codebase comes with:
 
-- **Two flagship agents** that help you run the platform from your favorite AI Apps like Claude and ChatGPT. **Agent Builder** creates agents, teams, and workflows using the AgentOS Studio. **Platform Manager** understands, monitors, and explains the platform: codebase questions, eval history, deployment checks, schedules.
+- **Two platform agents** that help you build and run the platform from your favorite AI Apps like Claude and ChatGPT. **Agent Builder** creates agents, teams, and workflows using the AgentOS Studio. **Platform Manager** understands, monitors, and explains the platform: codebase questions, eval history, deployment checks, schedules.
 - **Coding-agent skills** let Claude Code, Codex, Cursor, and other coding agents build, test, and improve the platform automatically — see [Using the platform](#using-the-platform).
 
 Trace data, agent code, evals, and system logs are all available to coding agents, so the platform can inspect and improve itself end to end.
