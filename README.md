@@ -1,6 +1,6 @@
-# AgentOS: the agent backend for every frontend
+# AgentOS: The Agent Platform That Builds Itself
 
-AgentOS is a secure, scalable backend for running agents. Build agents once and make them available everywhere:
+AgentOS is a secure, scalable platform for running agents. Build agents once and make them available everywhere:
 
 1. **AI apps.** Claude and ChatGPT can use your agents through the MCP server at `/mcp`.
 2. **Chat interfaces.** Chat with your agents from Slack, WhatsApp, Telegram, and Discord.
