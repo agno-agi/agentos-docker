@@ -88,7 +88,7 @@ The bulk of the work. Diff each pair below; auto-fix per the rules at the top.
 | Skill frontmatter + links resolve | `.agents/skills/*/SKILL.md` ↔ folder name + `../../../` link targets | name≠folder, broken `../../../` path, dead cross-skill link |
 | `.claude/skills` symlink resolves | `.claude/skills` → `../.agents/skills` | Symlink missing or dangling |
 | `.mcp.json` servers and the docs that reference them agree | `.mcp.json` ↔ docs + skills | URL changed, server renamed |
-| MCP endpoint claims match code | `README.md`, `AGENTS.md`, `example.env` ↔ `app/main.py` `enable_mcp_server` | `/mcp` promised in docs but flag flipped off, or JWT/auth wording drifted |
+| MCP endpoint claims match code | `README.md`, `AGENTS.md`, `example.env` ↔ `app/main.py` `mcp_server` | `/mcp` promised in docs but flag flipped off, or JWT/auth wording drifted |
 | `scripts/mcp_check.sh` calls a registered agent | `scripts/mcp_check.sh` hardcoded `agent_id` ↔ `app/main.py` `agents=[...]` | Agent renamed/removed; the MCP smoke check breaks or tests the wrong agent |
 
 ## 4. Live container smoke
@@ -122,7 +122,7 @@ docker logs agentos-api --since 30s 2>&1 | grep -E "Running: \w+\(" | head -40
 
 (`Running: <tool>(` is the tool-call line shape agno emits when `AGNO_DEBUG=True`, which compose sets for dev. Without `AGNO_DEBUG` expect no matches — `HTTP 200` and a non-empty body are then your only signal.)
 
-Then smoke the MCP interface — the platform's second surface (`enable_mcp_server=True` in `app/main.py`):
+Then smoke the MCP interface — the platform's second surface (`mcp_server=True` in `app/main.py`):
 
 ```bash
 ./scripts/mcp_check.sh

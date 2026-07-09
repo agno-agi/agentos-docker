@@ -23,7 +23,8 @@ from workflows.run_evals import run_evals
 # Environment
 # ---------------------------------------------------------------------------
 runtime_env = getenv("RUNTIME_ENV", "prd")
-scheduler_base_url = getenv("AGENTOS_URL", "http://127.0.0.1:8000")
+# Used by the scheduler and the OAuth server when MCP OAuth is enabled.
+agentos_url = getenv("AGENTOS_URL", "http://127.0.0.1:8000")
 
 # ---------------------------------------------------------------------------
 # Interfaces
@@ -44,6 +45,23 @@ if SLACK_BOT_TOKEN and SLACK_SIGNING_SECRET:
             signing_secret=SLACK_SIGNING_SECRET,
             resolve_user_identity=True,
         )
+    )
+
+
+# ---------------------------------------------------------------------------
+# MCP OAuth — enabled by setting the MCP_CONNECT_SECRET environment variable.
+# Connect your favorite AI apps and coding agents to a secure /mcp using OAuth.
+# ---------------------------------------------------------------------------
+MCP_CONNECT_SECRET = getenv("MCP_CONNECT_SECRET", "")
+
+mcp_auth = None
+if MCP_CONNECT_SECRET:
+    from agno.os import AgentOSBuiltinAuth
+
+    mcp_auth = AgentOSBuiltinAuth(
+        url=agentos_url,
+        secret=MCP_CONNECT_SECRET,
+        signing_key_material=getenv("AGENTOS_MCP_SIGNING_KEY"),
     )
 
 
@@ -71,9 +89,10 @@ agent_os = AgentOS(
     name="AgentOS",
     tracing=True,
     scheduler=True,
-    scheduler_base_url=scheduler_base_url,
+    scheduler_base_url=agentos_url,
     authorization=runtime_env != "dev",
-    enable_mcp_server=True,
+    mcp_server=True,
+    mcp_auth=mcp_auth,
     lifespan=lifespan,
     db=get_postgres_db(),
     agents=[agent_builder, platform_manager, web_search],

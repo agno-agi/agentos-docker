@@ -6,7 +6,8 @@
 # JWT_VERIFICATION_KEY or JWT_JWKS_FILE; see "Run in production" in README.md),
 # drops the dev bind mount and hot reload so the container runs the code baked
 # into the image, and reads AGENTOS_URL from .env so the scheduler reaches the
-# platform over its public URL.
+# platform over its public URL. MCP_CONNECT_SECRET passes through the same way
+# — set it in .env and /mcp serves its own OAuth for chat-app connectors.
 #
 # The `!reset` tag (Docker Compose v2.24+) removes the dev bind mount instead
 # of merging with it; `!override` (v2.24.4+) replaces the ports list below so
@@ -19,6 +20,7 @@ services:
       RUNTIME_ENV: prd
       AGNO_DEBUG: "False"
       AGENTOS_URL: ${AGENTOS_URL:-http://127.0.0.1:8000}
+      MCP_CONNECT_SECRET: ${MCP_CONNECT_SECRET:-}
 
   # In dev, Postgres is published on all interfaces for GUI/psql convenience.
   # In production that would expose the database to the internet (Docker's

@@ -29,3 +29,8 @@ aienv*
 # Project-specific
 tmp/
 .claude/
+
+# Node (local deploy-tooling installs — not part of the image)
+node_modules
+package.json
+package-lock.json
