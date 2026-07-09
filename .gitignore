@@ -77,5 +77,10 @@ tmp
 # The shared, vendor-neutral assets live in .agents/skills/ and .mcp.json.
 .codex/
 
+# Node (local tooling installs for deploy scripts)
+node_modules/
+package.json
+package-lock.json
+
 # Optional: local PyPI creds (uncomment if you ever create it)
 # .pypirc

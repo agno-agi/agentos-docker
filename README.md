@@ -1,6 +1,6 @@
 # AgentOS: the agent backend for every frontend
 
-AgentOS is a secure, scalable backend for building agents once and making them available everywhere.
+AgentOS is a secure, scalable backend for running agents. Build agents once and make them available everywhere:
 
 1. **AI apps.** Claude and ChatGPT can use your agents through the MCP server at `/mcp`.
 2. **Chat interfaces.** Chat with your agents from Slack, WhatsApp, Telegram, and Discord.
@@ -36,7 +36,7 @@ Help me set up an AgentOS on this machine. Work step by step and verify each ste
 6. Ask me which frontends I want connected, then set up the ones I pick:
    - Coding agents (including you): run `uvx agno connect` — it registers http://localhost:8000/mcp in Claude Code, Claude Desktop, Codex, and Cursor, and verifies with a real handshake. Use the default user scope, not --project (that would write a token into the repo).
    - The AgentOS web UI: walk me through os.agno.com → Connect OS → http://localhost:8000, named "Local AgentOS".
-   - Claude and ChatGPT apps (web or desktop): their sessions run in the cloud and can't reach localhost, so work with me on getting a public URL first, following the "Run in production" section of README.md — a tunnel (cloudflared, ngrok, or `tailscale funnel`) in front of this machine, then production mode with a JWT key I mint at os.agno.com. Then I add https://<public-url>/mcp as a custom connector in the chat app's connector settings.
+   - Claude and ChatGPT apps (web or desktop): their sessions run in the cloud and can't reach localhost, so work with me on getting a public URL first, following the "Run in production" section of README.md — a tunnel (cloudflared, ngrok, or `tailscale funnel`) in front of this machine, then production mode with a JWT key I mint at os.agno.com and an MCP_CONNECT_SECRET (the OAuth consent secret, openssl rand -base64 32) in .env. Then I add https://<public-url>/mcp as a custom connector in the chat app's connector settings and approve the consent page with that secret.
 7. Finish with a short summary of what's running and where, plus a few first prompts to try — start with asking Agent Builder to "Build an agent that tracks AI news and writes a daily brief".
 ```
 
@@ -77,7 +77,7 @@ Click **Chat** under **Platform Manager** and ask: "How healthy is the platform?
 
 ## Use your platform from Claude Code and chat apps
 
-AgentOS comes with an MCP server at `/mcp` (enabled by setting `enable_mcp_server=True` in [`app/main.py`](app/main.py)), so any MCP client can call your agents, teams, and workflows through tools like `run_agent`, `run_team`, and `run_workflow`.
+AgentOS comes with an MCP server at `/mcp` (enabled by setting `mcp_server=True` in [`app/main.py`](app/main.py)), so any MCP client can call your agents, teams, and workflows through tools like `run_agent`, `run_team`, and `run_workflow`.
 
 Register your AgentOS with the MCP clients on your machine:
 
@@ -91,7 +91,9 @@ It auto-detects Claude Code, Claude Desktop, Codex, and Cursor and registers `ht
 can you access my agentos mcp?
 ```
 
-**claude.ai and ChatGPT (web).** Hosted AI apps reach your platform over the internet and sign in with **OAuth**. Deploy to production (below) and add `https://<domain>/mcp` as a remote connector.
+**claude.ai and ChatGPT (web).** Hosted AI apps reach your platform over the internet and sign in with **OAuth**: set `MCP_CONNECT_SECRET` and the platform becomes its own OAuth authorization server — no external accounts. Set up production (below), add `https://<your-public-url>/mcp` as a remote connector, and approve the consent page with your connect secret.
+
+> **Heads up.** Dev and prod share the same `.env` in this template, so once `MCP_CONNECT_SECRET` is set, the local `/mcp` is OAuth-gated too. Token bearers keep working: `uvx agno connect` mints a PAT, and `./scripts/mcp_check.sh` falls back to a short-lived probe service account it mints and deletes itself.
 
 ## Run in production
 
@@ -123,10 +125,11 @@ Production values live in `.env` on the host — the same file compose already r
 ```sh
 OPENAI_API_KEY=sk-...
 AGENTOS_URL=https://<your-public-url>
+MCP_CONNECT_SECRET=<generate with: openssl rand -base64 32>
 DB_PASS=<generate a strong one>
 ```
 
-`AGENTOS_URL` is the address the platform advertises as its own. Left unset, the daily deployment check flags the platform as misconfigured, and anything that needs the public URL — chat-app connectors, hosted MCP clients — has nothing to point at. `DB_PASS` replaces the dev default (`ai`) — the override keeps Postgres bound to loopback, but a real password is still the floor for a production database.
+`AGENTOS_URL` is the address the platform advertises as its own. Left unset, the daily deployment check flags the platform as misconfigured, and anything that needs the public URL — chat-app connectors, hosted MCP clients — has nothing to point at. `MCP_CONNECT_SECRET` turns `/mcp` into its own OAuth 2.1 authorization server so claude.ai and ChatGPT (web) can connect; connecting asks for this secret once, on a consent page. It needs `AGENTOS_URL` for a stable public origin, and — because dev reads the same `.env` — it gates the local `/mcp` too. `DB_PASS` replaces the dev default (`ai`) — the override keeps Postgres bound to loopback, but a real password is still the floor for a production database.
 
 One catch on a host that already ran the dev compose: Postgres reads the password only when the `pgdata` volume is first initialized, so changing `DB_PASS` in `.env` won't take on its own — the database keeps the old password and the API blocks waiting for it. Either change it in place to match — `docker compose exec agentos-db psql -U ai -c "ALTER USER ai WITH PASSWORD '<new>';"` — or reinitialize with `docker compose down -v` (wipes all platform data).
 
@@ -163,7 +166,7 @@ MIIBIjANBgkq...
 docker compose -f compose.yaml -f compose.prod.yaml up -d --build
 ```
 
-The override switches `RUNTIME_ENV` to `prd` (JWT auth on), drops the dev bind mount and hot reload so the container runs the code baked into the image, passes your `AGENTOS_URL` through, and rebinds Postgres to loopback so only this host — not the internet — can reach it. Both services carry `restart: unless-stopped`, so the platform survives reboots as long as Docker starts on boot.
+The override switches `RUNTIME_ENV` to `prd` (JWT auth on), drops the dev bind mount and hot reload so the container runs the code baked into the image, passes your `AGENTOS_URL` (and `MCP_CONNECT_SECRET`, if set) through, and rebinds Postgres to loopback so only this host — not the internet — can reach it. Both services carry `restart: unless-stopped`, so the platform survives reboots as long as Docker starts on boot.
 
 Verify it's up and gated:
 
@@ -186,9 +189,9 @@ Re-run `uvx agno connect`, this time pointed at your deployed domain, to connect
 uvx agno connect --url https://<your-public-url>
 ```
 
-Production is JWT-gated, so this connection needs a token — `uvx agno connect` mints a service-account token (`agno_pat_…`) for it. The bare `uvx agno connect` (no `--url`) only re-registers `http://localhost:8000/mcp`.
+Production is JWT-gated, so this connection needs a token — `uvx agno connect` mints a service-account token (`agno_pat_…`) for it. `--url` pins the target; a bare `uvx agno connect` resolves it from where you run it — in this repo it discovers the public URL you set as `AGENTOS_URL` in `.env`, elsewhere it falls back to `http://localhost:8000/mcp`.
 
-For **claude.ai and ChatGPT (web)**, follow the remote MCP server registration process for `https://<your-public-url>/mcp` and authenticate using OAuth.
+For **claude.ai and ChatGPT (web)**, the platform serves its own OAuth authorization server on `/mcp` — the login secret is the `MCP_CONNECT_SECRET` you set in `.env` in step 2. Add `https://<your-public-url>/mcp` as a custom connector in the chat app's connector settings. **Leave the form's optional OAuth fields (client ID / client secret) empty** — the platform registers the app automatically. The connect secret is typed exactly once, on the consent page that opens after you click **Connect**.
 
 ### 6. Redeploy after code changes
 
@@ -251,7 +254,9 @@ Because the repo is managed by coding agents, it moves fast. Run `/review-and-im
 | `RUNTIME_ENV` | no | `prd` | `dev` disables JWT. `compose.yaml` sets it to `dev` for local; `compose.prod.yaml` sets `prd` — never hand-set `dev` on a production host, or the platform serves unauthenticated. |
 | `JWT_VERIFICATION_KEY` | prd | none | Public key from os.agno.com. Required when `RUNTIME_ENV=prd`, unless `JWT_JWKS_FILE` is set. |
 | `JWT_JWKS_FILE` | prd | none | Path to a JWKS file; alternative to `JWT_VERIFICATION_KEY` for production JWT verification. |
-| `AGENTOS_URL` | no | `http://127.0.0.1:8000` | Scheduler base URL. In production, set it in `.env` to your public URL (domain or tunnel); `compose.prod.yaml` passes it through. |
+| `AGENTOS_URL` | no | `http://127.0.0.1:8000` | Scheduler base URL. In production, set it in `.env` to your public URL (domain or tunnel); `compose.prod.yaml` passes it through. Also the public origin OAuth metadata derives from when `MCP_CONNECT_SECRET` is set. |
+| `MCP_CONNECT_SECRET` | no | none | If set (≥16 chars, e.g. `openssl rand -base64 32`), `/mcp` becomes its own OAuth 2.1 authorization server so claude.ai and ChatGPT (web) can connect; connecting asks for this secret on a consent page. Requires `AGENTOS_URL`. Set it in `.env` — dev reads the same file, so it gates the local `/mcp` too. PAT and JWT bearers keep working alongside. |
+| `AGENTOS_MCP_SIGNING_KEY` | no | none | Optional high-entropy signing-key material (≥32 chars) for OAuth tokens. Unset, a strong key is generated and persisted in the database. Rotating it invalidates outstanding tokens. |
 | `ENABLE_DEPLOY_CHECK` | no | `True` | The reference deployment-check cron runs daily by default. Set `False` to disable; the workflow is runnable on demand regardless. |
 | `ENABLE_SCHEDULED_EVALS` | no | `False` | If `True`, schedules the run-evals workflow daily. Off by default because it uses model calls. |
 | `EVALS_TAG` | no | `smoke` | Eval tag run by the run-evals workflow. |
