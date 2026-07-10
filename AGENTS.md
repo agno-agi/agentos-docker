@@ -19,7 +19,7 @@ AgentOS  (app/main.py)
 
 Shared:
 - PostgreSQL + pgvector for sessions, memory, knowledge.
-- `app.settings.default_model()` returns `OpenAIResponses(id="gpt-5.5")` — bump the model in one place.
+- `app.settings.default_model()` returns `OpenAIResponses(id="gpt-5.6-sol")` — bump the model in one place.
 - `app.registry.registry` exposes the safe Studio registry Agent Builder can use: Agno docs MCP, web search, reasoning tools, utility functions, the default model, the shared DB, and the reference agents (web-search, platform-manager).
 - Scheduler enabled by default (`scheduler=True`); `app/schedules.py` registers schedules from the lifespan. Deployment check runs daily **on** by default — set `ENABLE_DEPLOY_CHECK=False` to disable it. Scheduled evals are **off** by default — set `ENABLE_SCHEDULED_EVALS=True` to schedule the run-evals workflow.
 - Slack interface lights up automatically when both `SLACK_BOT_TOKEN` and `SLACK_SIGNING_SECRET` are set.

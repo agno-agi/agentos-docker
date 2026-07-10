@@ -54,7 +54,7 @@ If the user came in with a concrete agent in mind, ask all five below in one con
    - (c) build anyway and surface the auth error during smoke test.
 5. **Slug** — short kebab-case id (e.g. `linear-agent`). Used as the agent's `id`, in URLs, and in `app/config.yaml`. Propose one based on the agent's purpose.
 
-Model defaults to `gpt-5.5` via `app.settings.default_model()` — override only if the user asks.
+Model defaults to `gpt-5.6-sol` via `app.settings.default_model()` — override only if the user asks.
 
 ## 2. Ground the design in agno docs
 
