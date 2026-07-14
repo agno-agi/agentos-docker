@@ -15,46 +15,58 @@ You are creating a new agent in this AgentOS. The user already has the platform 
 
 If it isn't reachable, ask the user to run `docker compose up -d --build` and wait for it to come up.
 
-## 1. Ask the user
+## 1. Find the agent worth building
 
-Use the coding agent's structured user-input control when available (for example, Claude Code's `AskUserQuestion`, Codex's user-input tool, or an equivalent) for every choice-shaped prompt below — the branching opener, the role pick, the systems multiselect, the agent-idea suggestions, and the **Pattern** pick. If no structured control is available, ask the same choices in concise plain text. Use plain prompts for free-form fields (the recurring-task description, the slug).
+**Be self-driving: ask only what needs a human, decide the rest, and say what you decided.** Two exchanges is the target — one to understand the job, one to confirm what you'll build. The pattern, the slug, the model, and the toolkits are your calls, not the user's. They came here to watch an idea come alive, not to fill in a form.
 
-Open with a single branching question — don't dump five questions at once:
+Use the coding agent's structured user-input control when available (Claude Code's `AskUserQuestion`, Codex's user-input tool, or an equivalent) for the choice-shaped questions below. Use plain prompts for free-form answers.
 
-> Do you have an agent in mind, or would you like a guided experience?
+### If they already named an agent
 
-If the user immediately describes a concrete agent ("build me a GitHub PR reviewer"), treat that as "agent in mind" and skip to **Specifics**.
+"Build me a GitHub PR reviewer" is a complete brief. **Ask nothing.** Design it (Step 2), then state what you're building in one message and start:
 
-### Guided experience
+> Building **PR Reviewer** (`pr-reviewer`) — reads open PRs on a repo and summarizes what changed and what looks risky. Uses `GithubTools`; needs `GITHUB_ACCESS_TOKEN`, which is already in your `.env`. Building now — stop me if that's not what you meant.
 
-Ask three light discovery questions in one message:
+Don't wait for a reply. Only pause if something is genuinely missing (see **Stop only for this**).
 
-- What's your role? (engineer, PM, founder, analyst, ops, …)
-- What's a recurring task that takes you real time?
-- Which systems do you live in day-to-day? (Slack, GitHub, Linear, Notion, your own DB, …)
+### If they want guidance
 
-Use the answers + the `agno-docs` MCP (configured in [`.mcp.json`](../../../.mcp.json)) to surface **3-5 concrete agent ideas** grounded in real agno toolkits. For each suggestion: a short name, a one-sentence purpose, and the toolkit(s) it would use.
+Open with **one** question:
 
-Common starting points: GitHub PR reviewer, Linear triager, knowledge-base Q&A over a `docs/` folder, Slack on-call digest, market-scan / web research.
+> What's something you do every week that you'd rather hand off?
 
-Once the user picks one, you have name, purpose, and tools settled — only ask for what's still unknown under **Specifics**.
+Their first answer will be vague — *"I keep up with what competitors ship"*, *"I triage bugs"*. **Dig once. This is the most important moment in the skill.** A generic answer yields a generic agent, and nobody keeps a generic agent. A specific answer yields an agent about *their* work, which is the one they'll come back to and eventually deploy.
 
-### Specifics
+Ask a single grounded follow-up, in their own terms — pick the one that actually unlocks the design:
 
-If the user came in with a concrete agent in mind, ask all five below in one consolidated message. If they came through the guided path, only items 2, 4, and 5 are still unknown — the rest are settled. Don't re-ask.
+- Where do you look when you do it? (Which repos, sites, channels, tools?)
+- What do you do with the result — post it, file it, decide from it?
+- What's the annoying part — the volume, the context-switching, the writing-up?
 
-1. **Name and purpose** — what should this agent do? One sentence.
-2. **Pattern** — propose the right one with a heuristic, don't make the user choose blind:
-   - **Direct tools** (like [`agents/web_search.py`](../../../agents/web_search.py)): default when the agent uses ≤2 toolkits, or the user explicitly named the tools.
-   - **Context provider** (like the `codebase_context` wiring in [`agents/platform_manager.py`](../../../agents/platform_manager.py)): default when the agent queries a single information source through one `query_<thing>` tool, or you're hiding a sub-agent. (Platform Manager mixes patterns — it also carries direct read-only runtime tools; the context-provider part is the `WorkspaceContextProvider`.)
-3. **Tools / sources** — which MCP servers, toolkits, or context providers? URL of the MCP server if any. (Default: nothing — just chat.)
-4. **Required env vars** — for each toolkit chosen, identify the API key(s) it needs (from the toolkit's `Prerequisites` section in agno docs — see Step 2). For each required key, confirm the user has it set in `.env`. If they don't, offer:
-   - (a) add it to `.env` now,
-   - (b) drop that toolkit and pick something keyless (HackerNews, ArXiv, Wikipedia, DuckDuckGo via WebSearchTools),
-   - (c) build anyway and surface the auth error during smoke test.
-5. **Slug** — short kebab-case id (e.g. `linear-agent`). Used as the agent's `id`, in URLs, and in `app/config.yaml`. Propose one based on the agent's purpose.
+One follow-up. Not an interrogation.
 
-Model defaults to `gpt-5.6-sol` via `app.settings.default_model()` — override only if the user asks.
+Then propose **one agent you actually recommend**, plus two alternates, as a single pick. Not a menu to shop through — a recommendation with a fallback. For each: a name, one sentence on what it does, and the toolkit(s) behind it. Ground every toolkit in the `agno-docs` MCP (configured in [`.mcp.json`](../../../.mcp.json)) — never invent one.
+
+Build what makes *their* week easier. Resist the demo classics (news digest, generic web researcher) unless that's genuinely what they described — those are the agents people try once and forget.
+
+### Decide these yourself — don't ask
+
+| Decision | How you decide it |
+|---|---|
+| **Pattern** | **Direct tools** (mirror [`agents/web_search.py`](../../../agents/web_search.py)) when the agent uses ≤2 toolkits — this is the common case. **Context provider** (mirror the `codebase_context` wiring in [`agents/platform_manager.py`](../../../agents/platform_manager.py)) when it queries one information source through a single `query_<thing>` tool, or you're hiding a sub-agent. Pick one and mention it in a clause; never make the user choose. |
+| **Slug** | Derive it from the purpose (`pr-reviewer`, `linear-triager`). Kebab-case. State it, don't ratify it. |
+| **Model** | `default_model()` — already `gpt-5.6-sol`. Override only if the user asks. |
+| **Toolkits** | Choose from what the discovery answers imply, grounded in agno docs (Step 2). Prefer keyless toolkits (HackerNews, ArXiv, Wikipedia, DuckDuckGo via `WebSearchTools`) when they'd serve just as well — a keyless agent works on the first try. |
+| **Memory / history** | The defaults in the template pattern. Don't ask. |
+
+### Stop only for this
+
+An API key that the chosen toolkit **requires** and that isn't in `.env`. Check `.env` yourself first — don't ask the user what's in a file you can read. If a key is genuinely missing, say which toolkit needs it and offer the two real choices:
+
+- add the key to `.env` now (they paste it in; never read or print it), or
+- swap to a keyless toolkit and build right now.
+
+Everything else — proceed and report.
 
 ## 2. Ground the design in agno docs
 
@@ -67,7 +79,7 @@ For each toolkit, capture four things:
 
 - **Import path** (e.g. `from agno.tools.exa import ExaTools`).
 - **Constructor args** that matter for this agent (categories, domains, max_results, etc.).
-- **Required env vars** — feed these back into Step 1, item 4.
+- **Required env vars** — check them against `.env` yourself. Only stop for the user if a required key is missing (Step 1, **Stop only for this**).
 - **Pip dependencies** — some toolkits need extra packages (`exa-py`, `anthropic`, `jina`, `yfinance`, …). The toolkit's `Prerequisites` section lists them. Capture now, then add them to `pyproject.toml` before generating `requirements.txt` in Step 6.
 
 If the toolkit's docs page has no `Prerequisites` or `Authentication` section, the toolkit is keyless and needs no env vars or extra pip deps (e.g. HackerNews, ArXiv, Wikipedia, DuckDuckGo).
@@ -216,9 +228,11 @@ Iterate at most 2-3 times on the prompt before stopping and surfacing the questi
 
 When the smoke test passes:
 
-1. Tell the user the agent's slug. They can chat with it at `https://os.agno.com` (if their OS is connected there) or against `http://localhost:8000` directly for local-only. The agent is also exposed through the AgentOS MCP endpoint at `/mcp` (`run_agent` tool) — `./scripts/mcp_check.sh` smoke-tests that surface.
-2. Suggest the next-step loops:
-   - [`extend-agent`](../extend-agent/SKILL.md) — user-driven changes (add a tool, refine the prompt, fix a bug).
-   - [`improve-agent`](../improve-agent/SKILL.md) — autonomous probe-and-harden against the agent's `INSTRUCTIONS`.
+1. **Show them their agent working.** Lead with the answer it just gave in the smoke test — that's their idea, alive, in their own words. Then the slug, and where to reach it: `https://os.agno.com` (if their OS is connected) or `http://localhost:8000` directly. It's also exposed through the AgentOS MCP endpoint at `/mcp` (`run_agent` tool).
+2. **Hand them the loop.** The agent they just built is a first draft, and both ways to sharpen it are already in this session:
+   - [`/extend-agent`](../extend-agent/SKILL.md) — they drive: add a tool or source, teach it a new trick, fix something it got wrong.
+   - [`/improve-agent`](../improve-agent/SKILL.md) — you drive: probe it against its own `INSTRUCTIONS`, judge, edit, re-probe until it's reliable. No input needed from them.
+
+   Suggest whichever fits what the smoke test actually showed — if a tool didn't fire or an answer was thin, name that and point at the loop that fixes it.
 
 A simple agent usually takes 5-10 minutes from invoking the `create-new-agent` skill to working. More if the user asks for custom tools or an MCP server with auth.
