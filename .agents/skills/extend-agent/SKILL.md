@@ -74,7 +74,7 @@ Then edit. Files in scope:
 
 - [`agents/<slug>.py`](../../../agents/) — instructions, tools, model, memory flags, knowledge.
 - [`app/main.py`](../../../app/main.py) — only if registering a new sub-agent or changing interface wiring.
-- [`app/config.yaml`](../../../app/config.yaml) — add or update the agent's `quick_prompts` to exercise the new capability.
+- [`app/config.yaml`](../../../app/config.yaml) — update the agent's manifest entry: refresh the `description` if the job changed, and add or update `quick_prompts` to exercise the new capability.
 - [`pyproject.toml`](../../../pyproject.toml) — only if a toolkit needs new pip deps.
 
 Keep edits surgical. One change per iteration of this loop — if the user asked for three things, do them one at a time so each can be smoke-tested independently.
@@ -171,11 +171,13 @@ Target: `web-search`. The user wants the agent to also be able to read PDFs from
 
 **Step 4** — propose: *"Add `JinaReaderTools` so `web-search` can fetch and parse PDFs. Needs `jina` in `pyproject.toml`; works keyless, set `JINA_API_KEY` for higher limits. Add a quick prompt that exercises a PDF URL."* User says yes.
 
-Edit `agents/web_search.py` to import `JinaReaderTools` and add it to `tools=[web_tools, JinaReaderTools()]`. Add `jina` to `pyproject.toml` (and optionally `JINA_API_KEY=` to [`example.env`](../../../example.env)). Add a quick prompt to `app/config.yaml`:
+Edit `agents/web_search.py` to import `JinaReaderTools` and add it to `tools=[web_tools, JinaReaderTools()]`. Add `jina` to `pyproject.toml` (and optionally `JINA_API_KEY=` to [`example.env`](../../../example.env)). Add a quick prompt to the agent's manifest entry in `app/config.yaml`:
 
 ```yaml
-web-search:
-  - "Summarize the abstract of https://arxiv.org/pdf/2501.12948"
+manifest:
+  web-search:
+    quick_prompts:
+      - "Summarize the abstract of https://arxiv.org/pdf/2501.12948"
 ```
 
 **Step 5** — pip deps changed: `./scripts/generate_requirements.sh && docker compose up -d --build`. Poll `/health`.

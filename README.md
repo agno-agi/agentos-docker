@@ -2,11 +2,11 @@
 
 AgentOS is a secure, scalable platform for running agents. Build agents once and make them available everywhere:
 
-1. **AI apps.** Claude and ChatGPT can use your agents through the MCP server at `/mcp`.
-2. **Chat interfaces.** Chat with your agents from Slack, WhatsApp, Telegram, and Discord.
-3. **Coding agents.** Let Claude Code and Codex run your platform using the skills in [`.agents/skills/`](.agents/skills/).
-4. **Your product.** Embed agents directly into your product with the AgentOS REST API: 80+ endpoints for runs, sessions, memory, knowledge, evals, and more.
-5. **AgentOS UI.** Chat with agents, inspect sessions, traces, memory, and evals from the control plane at [os.agno.com](https://os.agno.com?utm_source=github&utm_medium=example-repo&utm_campaign=agentos-docker&utm_content=agentos-docker&utm_term=docker).
+1. **AgentOS UI.** Chat with agents, build new ones with Agent Builder, and inspect sessions, traces, memory, and evals from the AgentOS UI at [os.agno.com](https://os.agno.com?utm_source=github&utm_medium=example-repo&utm_campaign=agentos-docker&utm_content=agentos-docker&utm_term=docker).
+2. **Coding agents.** Claude Code and Codex build, test, and improve the platform using the skills in [`.agents/skills/`](.agents/skills/).
+3. **AI apps.** Claude and ChatGPT can use your agents through the MCP server at `/mcp`.
+4. **Chat interfaces.** Chat with your agents from Slack, WhatsApp, Telegram, and Discord.
+5. **Your product.** Embed agents directly into your product with the AgentOS REST API: 80+ endpoints for runs, sessions, memory, knowledge, evals, and more.
 
 <img width="3298" height="2412" alt="AgentOS" src="https://github.com/user-attachments/assets/40a53a42-d4d2-402b-8e92-742609207957" />
 
@@ -33,11 +33,8 @@ Help me set up AgentOS on this machine. Work step by step. When a step needs me 
 3. Confirm docker is installed, running and `docker info` succeeds. If Docker is missing, ask me to install Docker Desktop and wait until it's running.
 4. Start the platform with `docker compose up -d --build`, then poll http://localhost:8000/docs until it returns 200 (first build takes a few minutes). If it never comes up, read `docker compose logs agentos-api` and fix what you find.
 5. Prove it end to end with ./scripts/mcp_check.sh — it should print "MCP OK" and a real agent answer. Show me that answer: it's my platform talking.
-6. Ask me which frontends I want connected, then set up the ones I pick:
-   - Coding agents (including you): run `uvx agno connect` — it registers http://localhost:8000/mcp in Claude Code, Claude Desktop, Codex, and Cursor, and verifies with a real handshake.
-   - The AgentOS web UI: walk me through os.agno.com → Connect OS → http://localhost:8000, named "Local AgentOS".
-   - Claude and ChatGPT apps (web or desktop): their sessions run in the cloud and can't reach localhost, so work with me on getting a public URL first, following the "Run in production" section of README.md — a tunnel (cloudflared, ngrok, or `tailscale funnel`) in front of this machine, then production mode with a JWT key I mint at os.agno.com and the MCP_CONNECT_SECRET (the OAuth consent secret, openssl rand -base64 32) saved in .env. Then I add https://<public-url>/mcp as a custom connector in the chat app's connector settings and approve the consent page with that secret.
-7. Finish with a short summary of what's running and where, plus a few first prompts to try — start with asking Agent Builder to "Build an agent that tracks AI news and writes a daily brief".
+6. Walk me through connecting the AgentOS UI: os.agno.com → Connect OS → http://localhost:8000, named "Local AgentOS". That's where I chat with my agents and inspect sessions, memory, and evals.
+7. Finish with a short summary of what's running and where, then point me at building: suggest asking Agent Builder (in the UI) to "Build an agent that tracks AI news and writes a daily brief", or running /create-new-agent right here in this session. Mention in one line — without setting anything up — that the README also covers connecting other frontends: coding agents via `uvx agno connect`, and claude.ai / ChatGPT over OAuth once your platform has a public URL.
 ```
 
 ## Manual Setup
@@ -74,26 +71,6 @@ Confirm your AgentOS is running at [http://localhost:8000/docs](http://localhost
 ### Step 4: Check platform health
 
 Click **Chat** under **Platform Manager** and ask: "How healthy is the platform?" It answers from the codebase and runtime data — eval history, deployment checks, schedules, and the component you just built.
-
-## Use your platform from Claude Code and chat apps
-
-AgentOS comes with an MCP server at `/mcp` (enabled by setting `mcp_server=True` in [`app/main.py`](app/main.py)), so any MCP client can call your agents, teams, and workflows through tools like `run_agent`, `run_team`, and `run_workflow`.
-
-Register your AgentOS with the MCP clients on your machine:
-
-```sh
-uvx agno connect
-```
-
-It auto-detects Claude Code, Claude Desktop, Codex, and Cursor and registers `http://localhost:8000/mcp`. After a successful connection, open one of these apps and ask:
-
-```text
-can you access my agentos mcp?
-```
-
-**claude.ai and ChatGPT (web).** Hosted AI apps reach your platform over the internet and need an OAuth login. Set up production (below), add `https://<your-public-url>/mcp` as a remote connector, and approve the consent page with your connect secret.
-
-> **Heads up.** Dev and prod share the same `.env` in this template, so once `MCP_CONNECT_SECRET` is set, the local `/mcp` is OAuth-gated too. Token bearers keep working: `uvx agno connect` mints a PAT, and `./scripts/mcp_check.sh` falls back to a short-lived probe service account it mints and deletes itself.
 
 ## Run in production
 
@@ -216,7 +193,7 @@ Open your coding agent of choice (Claude Code, Codex, Cursor) and run:
 /create-new-agent
 ```
 
-It asks a few questions, generates the agent file in `agents/`, registers it in `app/main.py`, adds quick prompts to `app/config.yaml`, restarts the container, and smoke-tests it live.
+It asks a few questions, generates the agent file in `agents/`, registers it in `app/main.py`, adds its description and quick prompts to `app/config.yaml`, restarts the container, and smoke-tests it live.
 
 ### Improve
 
@@ -243,6 +220,26 @@ If a case fails, run **`/eval-and-improve`** — it diagnoses each failure, fixe
 ### Maintain
 
 Because the repo is managed by coding agents, it moves fast. Run `/review-and-improve` before a release or after a refactor: it sweeps for drift between docs, code, and config, auto-fixes mechanical drift like stale paths and missing env vars, and flags anything bigger.
+
+## Connect more frontends (optional)
+
+AgentOS comes with an MCP server at `/mcp` (enabled by setting `mcp_server=True` in [`app/main.py`](app/main.py)), so any MCP client can call your agents, teams, and workflows through tools like `run_agent`, `run_team`, and `run_workflow`.
+
+Register your AgentOS with the MCP clients on your machine:
+
+```sh
+uvx agno connect
+```
+
+It auto-detects Claude Code, Claude Desktop, Codex, and Cursor and registers `http://localhost:8000/mcp`. After a successful connection, open one of these apps and ask:
+
+```text
+can you access my agentos mcp?
+```
+
+**claude.ai and ChatGPT (web).** Hosted AI apps reach your platform over the internet and need an OAuth login. Set up production (above), add `https://<your-public-url>/mcp` as a remote connector, and approve the consent page with your connect secret.
+
+> **Heads up.** Dev and prod share the same `.env` in this template, so once `MCP_CONNECT_SECRET` is set, the local `/mcp` is OAuth-gated too. Token bearers keep working: `uvx agno connect` mints a PAT, and `./scripts/mcp_check.sh` falls back to a short-lived probe service account it mints and deletes itself.
 
 ## Environment variables
 

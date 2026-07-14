@@ -22,7 +22,7 @@ This is a **recurring sweep** — meant to be re-run regularly. On a clean repo 
 - Stale entries in `example.env` for vars nothing reads — delete unless the surrounding comment block describes them as optional/future ("alternate model providers", "future feature"). Flag instead of fixing if intent is unclear.
 - Architecture diagram in `AGENTS.md` / `README.md` missing a registered agent or workflow.
 - New agent file on disk not yet imported in [`app/main.py`](../../../app/main.py) (add the import + append to `agents=[...]`).
-- Missing `quick_prompts` block for a registered agent (draft three from the agent's `INSTRUCTIONS`; flag the new entries so the user can refine).
+- Missing manifest entry in `app/config.yaml` for a registered component (draft a one-line description and three quick prompts from its `INSTRUCTIONS`; flag the new entries so the user can refine).
 - Missing or wrong cross-links between docs and the coding-agent skills in [`.agents/skills/*/SKILL.md`](../../../.agents/skills/) (and between skills).
 - Single-line factual claim in one doc contradicted by another doc or by code (e.g. one doc says "hot-reload picks up new agents" while another says a restart is required) — auto-fix the doc, not the code.
 
@@ -60,7 +60,7 @@ Read every file in scope. Build a mental model of:
 - **Registered agents** — what's imported in `app/main.py`'s `agents=[...]`?
 - **Agent files on disk** — what's in [`agents/`](../../../agents/)?
 - **Env vars actually read** — grep `os.environ`, `os.getenv`, `getenv(`, plus settings/config modules.
-- **Quick prompts** — what's in [`app/config.yaml`](../../../app/config.yaml) under `chat.quick_prompts`?
+- **Manifest** — what's in [`app/config.yaml`](../../../app/config.yaml) under `manifest` (description + quick prompts per component)?
 - **Eval cases** — what's in [`evals/cases.py`](../../../evals/cases.py)?
 - **Registered workflows** — what's imported into [`app/main.py`](../../../app/main.py) and passed to `AgentOS(workflows=[...])`? Workflow files on disk in [`workflows/`](../../../workflows/)?
 - **Schedules** — what `register_schedules()` ([`app/schedules.py`](../../../app/schedules.py)) registers, and the env that gates each (e.g. `ENABLE_DEPLOY_CHECK`). Every schedule `endpoint` should map to a real workflow `id`.
@@ -75,7 +75,7 @@ The bulk of the work. Diff each pair below; auto-fix per the rules at the top.
 | Check | Where | Common drift |
 |---|---|---|
 | Every agent file is registered | [`agents/`](../../../agents/) ↔ `app/main.py` | New agent file not imported |
-| Every registered agent has quick prompts | `app/main.py` ↔ `app/config.yaml` | Agent added without prompts |
+| Every registered agent + workflow has a manifest entry | `app/main.py` ↔ `app/config.yaml` | Component added without description/prompts |
 | Every env var in code is documented | code grep ↔ `AGENTS.md` env table + `example.env` | New var added without entries |
 | Every var in `example.env` is read somewhere | `example.env` ↔ code grep | Stale var nobody reads |
 | Every path mentioned in docs exists | `README.md`, `AGENTS.md`, `docs/*.md`, `.agents/skills/*/SKILL.md` ↔ filesystem | Renamed or deleted file |

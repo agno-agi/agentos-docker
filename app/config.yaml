@@ -1,14 +1,35 @@
-chat:
-  quick_prompts:
-    agent-builder:
+manifest:
+  # --- Agents ---
+
+  agent-builder:
+    description: "Creates agents, teams, and workflows using the AgentOS Studio."
+    quick_prompts:
       - "Build an agent that tracks AI news and writes a daily brief"
       - "Build a multi-agent team with web search and platform manager agents"
       - "Build a workflow that researches a topic, drafts a report, and works with me on improving it"
-    platform-manager:
+
+  platform-manager:
+    description: "Provides read-only diagnostics and codebase context."
+    quick_prompts:
       - "Describe this platform: agents, workflows, and schedules"
       - "How healthy is the platform? Check the latest deployment check and eval history"
       - "Teach me how to use this AgentOS"
-    web-search:
+
+  web-search:
+    description: "Searches the web and answers with grounded information."
+    quick_prompts:
       - "Tell me about Agno's AgentOS"
       - "What's the latest research from Anthropic?"
       - "Search for OpenAI's latest model release"
+
+  # --- Workflows ---
+
+  deployment-check:
+    description: "Run a deployment check to verify the AgentOS is running correctly."
+    quick_prompts:
+      - "Run the deployment check"
+
+  run-evals:
+    description: "Run a tagged subset of the eval suite."
+    quick_prompts:
+      - "Run the smoke evals"

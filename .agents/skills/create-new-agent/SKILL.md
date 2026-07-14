@@ -1,6 +1,6 @@
 ---
 name: create-new-agent
-description: Add a new agent to this AgentOS. Runs guided discovery or takes a concrete idea, then generates agents/slug.py, registers it in app/main.py, adds quick prompts, restarts the container, and smoke-tests it live. Use whenever the user wants to add or create a new agent.
+description: Add a new agent to this AgentOS. Runs guided discovery or takes a concrete idea, then generates agents/slug.py, registers it in app/main.py, adds its manifest entry (description + quick prompts), restarts the container, and smoke-tests it live. Use whenever the user wants to add or create a new agent.
 ---
 
 # Create a New Agent
@@ -135,14 +135,15 @@ agent_os = AgentOS(
 )
 ```
 
-## 5. Quick prompts
+## 5. Manifest entry
 
-Add three suggested prompts to [`app/config.yaml`](../../../app/config.yaml) under `chat.quick_prompts`, keyed by the agent's `id`:
+Add the agent to [`app/config.yaml`](../../../app/config.yaml) under `manifest`, keyed by the agent's `id`: a one-line description and three suggested prompts. The description renders on the AgentOS home card; quick prompts on the chat page. (The `description=` param on `Agent` is not used in this repo — UI metadata lives here. Optional `labels: [...]` are also supported for home-card tags.)
 
 ```yaml
-chat:
-  quick_prompts:
-    <slug>:
+manifest:
+  <slug>:
+    description: "<one line on what the agent does>"
+    quick_prompts:
       - "First example prompt"
       - "Second example prompt"
       - "Third example prompt"

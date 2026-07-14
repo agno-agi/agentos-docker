@@ -198,7 +198,6 @@ async def deployment_check_step(_step_input: StepInput) -> StepOutput:
 deployment_check = Workflow(
     id="deployment-check",
     name="Deployment Check",
-    description="Check DB, auth, scheduler URL, MCP endpoint, Slack config, schedules, and reference component imports.",
     db=get_postgres_db(),
     steps=[Step(name="deployment-check", executor=deployment_check_step)],
 )
