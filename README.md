@@ -1,12 +1,14 @@
-# AgentOS: The Agent Platform That Builds Itself
+# AgentOS: FastAPI for Agents
 
-AgentOS is a secure, scalable platform for running agents. Build agents once and make them available everywhere:
+AgentOS turns your agents into a production API: 80+ endpoints for runs, sessions, memory, knowledge, and evals. Build your product on top of it, connect your agents to AI apps like Claude and ChatGPT, and chat interfaces like Slack, WhatsApp, Telegram, and Discord.
 
-1. **AgentOS UI.** Chat with agents, build new ones with Agent Builder, and inspect sessions, traces, memory, and evals from the AgentOS UI at [os.agno.com](https://os.agno.com?utm_source=github&utm_medium=example-repo&utm_campaign=agentos-docker&utm_content=agentos-docker&utm_term=docker).
-2. **Coding agents.** Claude Code and Codex build, test, and improve the platform using the skills in [`.agents/skills/`](.agents/skills/).
-3. **AI apps.** Claude and ChatGPT can use your agents through the MCP server at `/mcp`.
-4. **Chat interfaces.** Chat with your agents from Slack, WhatsApp, Telegram, and Discord.
-5. **Your product.** Embed agents directly into your product with the AgentOS REST API: 80+ endpoints for runs, sessions, memory, knowledge, evals, and more.
+AgentOS gives you one AI backend for every frontend:
+
+1. **Your product.** Call the REST API from your app: run agents, stream responses, and manage sessions, memory, and knowledge.
+2. **AgentOS UI.** Chat with agents, build new ones with AgentOS Studio, and inspect sessions, traces, memory, and evals from the AgentOS UI at [os.agno.com](https://os.agno.com?utm_source=github&utm_medium=example-repo&utm_campaign=agentos-docker&utm_content=agentos-docker&utm_term=docker).
+3. **Coding agents.** Manage the full agent development lifecycle (create, extend, improve, eval and review) using the skills in [`.agents/skills/`](.agents/skills/).
+4. **AI apps.** MCP clients like Claude and ChatGPT can use your agents through the MCP server at `/mcp`.
+5. **Chat interfaces.** Chat with your agents from Slack, WhatsApp, Telegram, and Discord.
 
 <img width="3298" height="2412" alt="AgentOS" src="https://github.com/user-attachments/assets/40a53a42-d4d2-402b-8e92-742609207957" />
 
