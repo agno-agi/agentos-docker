@@ -1,23 +1,9 @@
 # AgentOS: FastAPI for Agents
 
-AgentOS turns your agents into a production API: 80+ endpoints for runs, sessions, memory, knowledge, and evals. Build your product on top of it, connect your agents to AI apps like Claude and ChatGPT, and chat interfaces like Slack, WhatsApp, Telegram, and Discord.
-
-## Get Started
-
-Copy this prompt into Claude Code, Cursor, or Codex. It sets up the platform and builds your first agent with you:
-
-```text
-Help me set up my agent platform and build my first agent.
-
-Clone https://github.com/agno-agi/agentos-docker.git into a folder called agent-platform, cd in, and run the setup-platform skill.
-```
-
-Your coding agent drives the whole flow: it checks Docker, sets up `.env`, boots the platform, proves the MCP endpoint live, builds your first agent with you, and connects the AgentOS UI. Prefer to drive yourself? See [Manual Setup](#manual-setup).
-
-## One AI backend for every frontend
+AgentOS turns your agents into a production API. One AI backend that serves every frontend.
 
 1. **Your product.** Call the REST API from your app: run agents, stream responses, and manage sessions, memory, and knowledge.
-2. **AgentOS UI.** Chat with agents, build new ones with AgentOS Studio, and inspect sessions, traces, memory, and evals from the AgentOS UI at [os.agno.com](https://os.agno.com?utm_source=github&utm_medium=example-repo&utm_campaign=agentos-docker&utm_content=agentos-docker&utm_term=docker).
+2. **AgentOS UI.** Chat with agents, build new ones, and inspect sessions, traces, memory, and evals from the AgentOS UI at [os.agno.com](https://os.agno.com?utm_source=github&utm_medium=example-repo&utm_campaign=agentos-docker&utm_content=agentos-docker&utm_term=docker).
 3. **Coding agents.** Manage the full agent development lifecycle (create, extend, improve, eval and review) using the skills in [`.agents/skills/`](.agents/skills/).
 4. **AI apps.** MCP clients like Claude and ChatGPT can use your agents through the MCP server at `/mcp`.
 5. **Chat interfaces.** Chat with your agents from Slack, WhatsApp, Telegram, and Discord.
@@ -25,6 +11,18 @@ Your coding agent drives the whole flow: it checks Docker, sets up `.env`, boots
 <img width="3298" height="2412" alt="AgentOS" src="https://github.com/user-attachments/assets/40a53a42-d4d2-402b-8e92-742609207957" />
 
 Built on [Agno](https://docs.agno.com). Everything runs on infrastructure you control, your data lives in your database.
+
+## Get Started
+
+Copy this prompt into your favorite coding agent. It sets up the platform and builds your first agent with you:
+
+```text
+Help me set up my agent platform and build my first agent.
+
+Clone https://github.com/agno-agi/agentos-docker.git into a folder called agent-platform, cd in, and run the setup-platform skill (in .agents/skills/).
+```
+
+Your coding agent drives the whole flow: it checks Docker, sets up `.env`, boots the platform, verifies the MCP endpoint, builds your first agent with you, and connects to the AgentOS UI. Prefer to drive yourself? See [Manual Setup](#manual-setup).
 
 ## Built for agents
 

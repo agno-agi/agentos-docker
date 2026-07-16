@@ -36,11 +36,11 @@ Run `./scripts/mcp_check.sh` — it should print "MCP OK" and a real agent answe
 
 ## 6. Build their first agent
 
-Now the fun part. Tell the user the platform is up and you're going to create their first agent together — they can always run `/create-new-agent` later, but you're doing it right now. Ask if they're ready.
+Now the fun part — don't ask permission, roll straight in. Tell the user the platform is up and you're building their first agent right now (they can always run `/create-new-agent` later for more), and in the same message start [`create-new-agent`](../create-new-agent/SKILL.md): if they've hinted at an idea anywhere in the session, propose it; otherwise end with that skill's discovery question. Your boot report should close with the first build question — never with "ready?".
 
-When they say go, follow [`create-new-agent`](../create-new-agent/SKILL.md) through its smoke test: work out what to build, then generate the agent, register it, and prove it live. Show the user their agent's first answer, then come back here — Steps 7 and 8 take over from that skill's own closing handoff.
+Then follow the skill through its smoke test: work out what to build, generate the agent, register it, and prove it live. Show the user their agent's first answer, then come back here — Steps 7 and 8 take over from that skill's own closing handoff.
 
-If they'd rather skip for now, that's fine — carry on and adapt the remaining steps.
+If they push back or want to stop, that's fine — carry on and adapt the remaining steps.
 
 ## 7. Connect the AgentOS UI
 
