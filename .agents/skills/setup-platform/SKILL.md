@@ -36,7 +36,14 @@ Run `./scripts/mcp_check.sh` — it should print "MCP OK" and a real agent answe
 
 ## 6. Build their first agent
 
-Now the fun part — don't ask permission, roll straight in. Tell the user the platform is up and you're building their first agent right now (they can always run `/create-new-agent` later for more), and in the same message start [`create-new-agent`](../create-new-agent/SKILL.md): if they've hinted at an idea anywhere in the session, propose it; otherwise end with that skill's discovery question. Your boot report should close with the first build question — never with "ready?".
+Now the fun part — don't ask permission, roll straight in. Tell the user the platform is up and you're building their first agent right now (they can always run `/create-new-agent` later for more), and in the same message start [`create-new-agent`](../create-new-agent/SKILL.md): if they've hinted at an idea anywhere in the session, propose it; otherwise end with that skill's discovery question — and, unlike a bare `/create-new-agent` run, offer a few example handoffs alongside it so a brand-new user has somewhere to start. Use the structured choice control when available, always with room for a free-form answer, e.g.:
+
+- research content for my blog posts
+- draft tweets from links I save
+- watch Hacker News for topics I care about
+- keep an eye on what competitors ship
+
+The options are calibration, not a menu — the pick is their first discovery answer, create-new-agent's follow-up dig still applies, and their own words always beat an option. Your boot report should close with the first build question — never with "ready?".
 
 Then follow the skill through its smoke test: work out what to build, generate the agent, register it, and prove it live. Show the user their agent's first answer, then come back here — Steps 7 and 8 take over from that skill's own closing handoff.
 
