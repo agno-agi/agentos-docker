@@ -39,7 +39,7 @@ Run `./scripts/mcp_check.sh` — it should print "MCP OK" and a real agent answe
 Now the fun part — don't ask permission, roll straight in. Tell the user the platform is up and you're building their first agent right now (they can always run `/create-new-agent` later for more), and in the same message start [`create-new-agent`](../create-new-agent/SKILL.md): if they've hinted at an idea anywhere in the session, propose it; otherwise end with that skill's discovery question — and, unlike a bare `/create-new-agent` run, offer a few example handoffs alongside it so a brand-new user has somewhere to start. Use the structured choice control when available, always with room for a free-form answer, e.g.:
 
 - research content for my blog posts
-- draft tweets from links I save
+- draft tweets from ideas I have
 - watch Hacker News for topics I care about
 - keep an eye on what competitors ship
 
