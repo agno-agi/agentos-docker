@@ -22,7 +22,7 @@ Help me set up my agent platform and build my first agent.
 Clone https://github.com/agno-agi/agentos-docker into a folder called agent-platform, cd in, and run the setup-platform skill (in .agents/skills/).
 ```
 
-Your coding agent drives the whole flow: it checks Docker, sets up `.env`, boots the platform, verifies the MCP endpoint, and builds your first agent with you. Prefer to drive yourself? See [Manual Setup](#manual-setup).
+Your coding agent drives the whole flow: it checks Docker, sets up `.env`, boots the platform, verifies the MCP endpoint, connects the AgentOS UI, and builds your first agent with you. Prefer to drive yourself? See [Manual Setup](#manual-setup).
 
 ## Built for agents
 

@@ -228,7 +228,7 @@ Iterate at most 2-3 times on the prompt before stopping and surfacing the questi
 
 When the smoke test passes:
 
-1. **Show them their agent working.** Lead with the answer it just gave in the smoke test — that's their idea, alive, in their own words. Then the slug, and where to reach it: `https://os.agno.com` (if their OS is connected) or `http://localhost:8000` directly. It's also exposed through the AgentOS MCP endpoint at `/mcp` (`run_agent` tool).
+1. **Show them their agent working.** Lead with the answer it just gave in the smoke test — that's their idea, alive, in their own words. Then the slug, and where to reach it: `https://os.agno.com` — hit **Refresh** (top right) and it's in the Agents list next to the built-in ones — or `http://localhost:8000` directly if their OS isn't connected. It's also exposed through the AgentOS MCP endpoint at `/mcp` (`run_agent` tool).
 2. **Hand them the loop.** The agent they just built is a first draft, and both ways to sharpen it are already in this session:
    - [`/extend-agent`](../extend-agent/SKILL.md) — they drive: add a tool or source, teach it a new trick, fix something it got wrong.
    - [`/improve-agent`](../improve-agent/SKILL.md) — you drive: probe it against its own `INSTRUCTIONS`, judge, edit, re-probe until it's reliable. No input needed from them.

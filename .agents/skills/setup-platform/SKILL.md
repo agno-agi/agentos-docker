@@ -1,13 +1,13 @@
 ---
 name: setup-platform
-description: Set up this AgentOS from a fresh clone — confirm Docker, configure .env, boot the containers, prove the MCP endpoint live, build the user's first agent, then connect the AgentOS UI. Use when the user asks to set up the platform, get started, or bring this repo up on a new machine.
+description: Set up this AgentOS from a fresh clone — confirm Docker, configure .env, boot the containers, prove the MCP endpoint live, connect the AgentOS UI, then build the user's first agent. Use when the user asks to set up the platform, get started, or bring this repo up on a new machine.
 ---
 
 # Set Up the Platform
 
 > _**Coding-agent workflow** — a `/slash-command` your coding agent (Claude Code, Codex, others) runs while developing this repo. Invoke it by name (e.g. `/setup-platform`) or describe the task and it triggers automatically._
 
-You are taking the user from a fresh clone to a running platform with their first agent live on it. The wow moment is Step 6 — watching their own agent get built and answer, minutes after cloning. Everything before it is setup; everything after it is where to reach what they built. Pace accordingly.
+You are taking the user from a fresh clone to a running platform with their first agent live on it. The wow moment is Step 7 — watching their own agent get built and answer, minutes after cloning, then appear in the UI they connected moments earlier. Everything before it is setup; everything after it is handing over the loop. Pace accordingly.
 
 **Be self-driving:** anything you can do — open a file, open a URL, launch an app — do it. Stop when you need a human: typing a secret, installing software, signing in to a website. When you do stop, tell the user exactly what to do. Never print or echo secret values.
 
@@ -34,24 +34,26 @@ Start the platform with `docker compose up -d --build`, then poll http://localho
 
 Run `./scripts/mcp_check.sh` — it should print "MCP OK" and a real agent answer. Show the user that answer: it's their platform talking.
 
-## 6. Build their first agent
+## 6. Connect the AgentOS UI
 
-Now the fun part — don't ask permission, roll straight in. Tell the user the platform is up and you're building their first agent right now (they can always run `/create-new-agent` later for more), and in the same message start [`create-new-agent`](../create-new-agent/SKILL.md): if they've hinted at an idea anywhere in the session, propose it; otherwise end with that skill's discovery question — and, unlike a bare `/create-new-agent` run, offer a few example handoffs alongside it so a brand-new user has somewhere to start. Use the structured choice control when available, always with room for a free-form answer, e.g.:
+Their platform is live — connect it to the AgentOS UI before building anything, so their first agent lands somewhere they can watch. Most users arrive from the Agno onboarding with the **Connect your OS** screen still open, showing "Awaiting connection". Tell them their AgentOS is up and to flip back to that tab: keep **Local** selected, the endpoint already reads `http://localhost:8000`, the default name is fine — hit **Connect OS**. If they don't have that screen open, open https://os.agno.com, have them sign in, and walk them through the same form: **Connect OS** → **Local** → endpoint `http://localhost:8000` → name it **Local AgentOS** → hit **Connect OS**. Either way, the UI is where they chat with their agents and inspect sessions, memory, and evals.
+
+Don't gate on the click — deliver the connect instructions and the first build question (Step 7) in the same message, so the platform connects while you're already talking about what to build. If they'd rather skip the UI, carry on — they can connect anytime.
+
+## 7. Build their first agent
+
+Now the fun part — don't ask permission, roll straight in. In the same message as the connect instructions, say you're building their first agent right now (they can always run `/create-new-agent` later for more), and start [`create-new-agent`](../create-new-agent/SKILL.md): if they've hinted at an idea anywhere in the session, propose it; otherwise end with that skill's discovery question — and, unlike a bare `/create-new-agent` run, offer a few example handoffs alongside it so a brand-new user has somewhere to start. Use the structured choice control when available, always with room for a free-form answer, e.g.:
 
 - research content for my blog posts
 - draft tweets from ideas I have
 - watch Hacker News for topics I care about
 - keep an eye on what competitors ship
 
-The options are calibration, not a menu — the pick is their first discovery answer, create-new-agent's follow-up dig still applies, and their own words always beat an option. Your boot report should close with the first build question — never with "ready?".
+The options are calibration, not a menu — the pick is their first discovery answer, create-new-agent's follow-up dig still applies, and their own words always beat an option. Your live-and-connect message should close with the first build move — the discovery question, or your build proposal if they've already hinted at an idea — never with "ready?" or "connected yet?".
 
-Then follow the skill through its smoke test: work out what to build, generate the agent, register it, and prove it live. Show the user their agent's first answer, then come back here — Steps 7 and 8 take over from that skill's own closing handoff.
+Then follow the skill through its smoke test: work out what to build, generate the agent, register it, and prove it live. Show the user their agent's first answer — and if they connected in Step 6, tell them to hit **Refresh** in the UI: their agent is now in the Agents list next to the built-in ones. Then come back here — Step 8 takes over from that skill's own closing handoff.
 
 If they push back or want to stop, that's fine — carry on and adapt the remaining steps.
-
-## 7. Connect the AgentOS UI
-
-Their agent is alive — now give them a place to chat with it: the AgentOS UI. Ask if you can open https://os.agno.com and walk them through connecting: **Connect OS** → enter `http://localhost:8000` → name it **Local AgentOS**. The new agent is in the Agents list next to the built-in ones — that's where they chat with it and inspect sessions, memory, and evals. If they'd rather skip this, move on — they can connect anytime.
 
 ## 8. Hand over the loop
 
