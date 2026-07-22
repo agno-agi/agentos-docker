@@ -36,20 +36,31 @@ Run `./scripts/mcp_check.sh` — it should print "MCP OK" and a real agent answe
 
 ## 6. Connect the AgentOS UI
 
-Their platform is live — connect it to the AgentOS UI before building anything, so their first agent lands somewhere they can watch. Most users arrive from the Agno onboarding with the **Connect your OS** screen still open, showing "Awaiting connection". Tell them their AgentOS is up and to flip back to that tab: keep **Local** selected, the endpoint already reads `http://localhost:8000`, the default name is fine — hit **Connect OS**. If they don't have that screen open, open https://os.agno.com, have them sign in, and walk them through the same form: **Connect OS** → **Local** → endpoint `http://localhost:8000` → name it **Local AgentOS** → hit **Connect OS**. Either way, the UI is where they chat with their agents and inspect sessions, memory, and evals.
+Their platform is live — show them how to connect to the AgentOS UI so their first agent lands somewhere they can watch. The UI is where they chat with their agents and inspect sessions, memory, and evals. Open with the news that the platform is up and they should connect to it on os.agno.com, then render the connection details as a table, something like this:
 
-Don't gate on the click — deliver the connect instructions and the first build question (Step 7) in the same message, so the platform connects while you're already talking about what to build. If they'd rather skip the UI, carry on — they can connect anytime.
+| Setting | Value |
+|---|---|
+| AgentOS UI | https://os.agno.com |
+| Connection type | **Local** |
+| Endpoint | `http://localhost:8000` |
+| Name | `Local AgentOS` (the default) |
+
+Follow the table with one line of direction. Most users arrive from the Agno onboarding with the **Connect your OS** screen still open, showing "Awaiting connection": tell them to flip back to that tab and hit **Connect OS** (the form already matches the table). If they don't have it open: https://os.agno.com, sign in, **Connect OS**, fill the form from the table.
+
+Don't gate on the click, and never ask whether they'd rather connect or build first — the table has already told them exactly what to do, so the same message rolls straight on: after the connect direction, bridge with "now let's build your first agent" and deliver Step 7's build move. The platform connects while you're already talking about what to build; if they'd rather skip the UI, carry on — they can connect anytime.
 
 ## 7. Build their first agent
 
-Now the fun part — don't ask permission, roll straight in. In the same message as the connect instructions, say you're building their first agent right now (they can always run `/create-new-agent` later for more), and start [`create-new-agent`](../create-new-agent/SKILL.md): if they've hinted at an idea anywhere in the session, propose it; otherwise end with that skill's discovery question — and, unlike a bare `/create-new-agent` run, offer a few example handoffs alongside it so a brand-new user has somewhere to start. Use the structured choice control when available, always with room for a free-form answer, e.g.:
+Now the fun part — roll straight in. In the same message, directly below the connection table and its one line of direction, say let's build your first agent (they can always run `/create-new-agent` later for more), and start [`create-new-agent`](../create-new-agent/SKILL.md): if they've hinted at an idea anywhere in the session, propose it; otherwise end with that skill's discovery question — and, unlike a bare `/create-new-agent` run, offer a few example handoffs alongside it so a brand-new user has somewhere to start. Use the structured choice control when available, always with room for a free-form answer, e.g.:
 
-- research content for my blog posts
-- draft tweets from ideas I have
-- watch Hacker News for topics I care about
-- keep an eye on what competitors ship
+- research content for blog posts
+- draft tweets from ideas
+- watch Hacker News for topics
+- analyze competitors
+- analyze their company copy and marketing
+- tell me what to build next
 
-The options are calibration, not a menu — the pick is their first discovery answer, create-new-agent's follow-up dig still applies, and their own words always beat an option. Your live-and-connect message should close with the first build move — the discovery question, or your build proposal if they've already hinted at an idea — never with "ready?" or "connected yet?".
+The options are calibration, not a menu — the pick is their first discovery answer, create-new-agent's follow-up dig still applies, and their own words always beat an option. Your live-and-connect message runs platform-up → connection table → connect direction → build kickoff, and closes with the first build move — the discovery question, or your build proposal if they've already hinted at an idea — never with "ready?" or "connected yet?".
 
 Then follow the skill through its smoke test: work out what to build, generate the agent, register it, and prove it live. Show the user their agent's first answer — and if they connected in Step 6, tell them to hit **Refresh** in the UI: their agent is now in the Agents list next to the built-in ones. Then come back here — Step 8 takes over from that skill's own closing handoff.
 
