@@ -66,7 +66,7 @@ This table is a hard checkpoint: it gets written before anything from Step 7 hap
 
 ## 7. Build their first agent
 
-Now the fun part — roll straight in. In the same message, directly below the connection table and its one line of direction, say let's build your first agent (they can always run `/create-new-agent` later for more), and start [`create-new-agent`](../create-new-agent/SKILL.md): if they've hinted at an idea anywhere in the session, propose it; otherwise end with that skill's discovery question — deliver it yourself in this message, picking up create-new-agent's own steps once they answer — and, unlike a bare `/create-new-agent` run, offer a few example handoffs alongside it so a brand-new user has somewhere to start. Keep it plain text — no structured choice control here, even though create-new-agent's own instructions offer one: a tool-call picker breaks the flow of the message, and typing a few words is easier than a menu. (The override is for this kickoff message only — once they answer, that skill's guidance applies as written.) The examples are bullets in the message, e.g.:
+Now the fun part — roll straight in. In the same message, directly below the connection table and its one line of direction, say let's build your first agent (they can always run `/create-agent` later for more), and start [`create-agent`](../create-agent/SKILL.md): if they've hinted at an idea anywhere in the session, propose it; otherwise end with that skill's discovery question — deliver it yourself in this message, picking up create-agent's own steps once they answer — and, unlike a bare `/create-agent` run, offer a few example handoffs alongside it so a brand-new user has somewhere to start. Keep it plain text — no structured choice control here, even though create-agent's own instructions offer one: a tool-call picker breaks the flow of the message, and typing a few words is easier than a menu. (The override is for this kickoff message only — once they answer, that skill's guidance applies as written.) The examples are bullets in the message, e.g.:
 
 - watch arXiv + Hacker News for work relevant to what I'm building
 - triage my repo's new issues into fix-now / later / close
@@ -74,7 +74,7 @@ Now the fun part — roll straight in. In the same message, directly below the c
 - research technical topics
 - draft my weekly team or investor update
 
-The options are calibration, not a menu — whatever they type is their first discovery answer, create-new-agent's follow-up dig still applies when the answer leaves the design open (a complete brief builds immediately, per that skill), and their own words always beat an option. Your live-and-connect message runs platform-up (MCP answer quoted) → connection table → connect direction → build kickoff, and closes with the first build move — the discovery question, or your build proposal if they've already hinted at an idea — never with "ready?" or "connected yet?".
+The options are calibration, not a menu — whatever they type is their first discovery answer, create-agent's follow-up dig still applies when the answer leaves the design open (a complete brief builds immediately, per that skill), and their own words always beat an option. Your live-and-connect message runs platform-up (MCP answer quoted) → connection table → connect direction → build kickoff, and closes with the first build move — the discovery question, or your build proposal if they've already hinted at an idea — never with "ready?" or "connected yet?".
 
 Then follow the skill through its smoke test: work out what to build, generate the agent, register it, and prove it live. Show the user their agent's first answer — and tell them that if they connected the UI, a **Refresh** puts their agent in the Agents list next to the built-in ones. Then come back here: stop before that skill's own closing and let Step 8 replace it, so the handover lands once.
 
@@ -86,6 +86,6 @@ Finish with a short summary of what you built together and the loop the user now
 
 - [`/extend-agent`](../extend-agent/SKILL.md) — change the agent: add a tool or source, add a capability, fix a known bug.
 - [`/improve-agent`](../improve-agent/SKILL.md) — recursively improve it using simulations and probes.
-- [`/create-new-agent`](../create-new-agent/SKILL.md) — whenever they want another.
+- [`/create-agent`](../create-agent/SKILL.md) — whenever they want another.
 
 Mention in one line that they can also connect the platform to coding agents (like yourself) with `uvx agno connect`, and to claude.ai / ChatGPT over OAuth once the platform is deployed with a public URL — [`/deploy-platform`](../deploy-platform/SKILL.md) runs that deploy when they're ready.

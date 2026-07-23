@@ -132,7 +132,7 @@ CASES: tuple[Case, ...] = (
         criteria=(
             "Provides a compact, actionable first-run onboarding tour grounded in this repository. "
             "Covers the coding-agent lifecycle in `.agents/skills/`, naming at least "
-            "`/create-new-agent`, `/extend-agent`, `/improve-agent`, `/eval-and-improve`, "
+            "`/create-agent`, `/extend-agent`, `/improve-agent`, `/eval-and-improve`, "
             "`/review-and-improve`, and `/deploy-platform` (naming more skills is fine, not required). "
             "Also mentions that `agent-builder` can "
             "create agentic components using the safe Studio registry. Beyond that, touches at "

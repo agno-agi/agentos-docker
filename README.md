@@ -184,7 +184,7 @@ This platform is designed so that coding agents can drive the entire **create â†
 Open your coding agent of choice (Claude Code, Codex, Cursor) and run:
 
 ```
-/create-new-agent
+/create-agent
 ```
 
 It asks a few questions, generates the agent file in `agents/`, registers it in `app/main.py`, adds its description and quick prompts to `app/config.yaml`, restarts the container, and smoke-tests it live.

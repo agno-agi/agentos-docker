@@ -1,11 +1,11 @@
 ---
-name: create-new-agent
+name: create-agent
 description: Add a new agent to this AgentOS. Runs guided discovery or takes a concrete idea, then generates agents/slug.py, registers it in app/main.py, adds its manifest entry (description + quick prompts), restarts the container, and smoke-tests it live. Use whenever the user wants to add or create a new agent.
 ---
 
 # Create a New Agent
 
-> _**Coding-agent workflow** — a `/slash-command` your coding agent (Claude Code, Codex, others) runs while developing this repo. Invoke it by name (e.g. `/create-new-agent`) or describe the task and it triggers automatically._
+> _**Coding-agent workflow** — a `/slash-command` your coding agent (Claude Code, Codex, others) runs while developing this repo. Invoke it by name (e.g. `/create-agent`) or describe the task and it triggers automatically._
 
 You are creating a new agent in this AgentOS. The user already has the platform running locally on `http://localhost:8000` (`RUNTIME_ENV=dev`). Compose runs uvicorn with a scoped `--reload`, so code edits are picked up automatically; Step 6 covers when to restart instead.
 
@@ -236,4 +236,4 @@ When the smoke test passes:
 
    Suggest whichever fits what the smoke test actually showed — if a tool didn't fire or an answer was thin, name that and point at the loop that fixes it.
 
-A simple agent usually takes 5-10 minutes from invoking the `create-new-agent` skill to working. More if the user asks for custom tools or an MCP server with auth.
+A simple agent usually takes 5-10 minutes from invoking the `create-agent` skill to working. More if the user asks for custom tools or an MCP server with auth.
