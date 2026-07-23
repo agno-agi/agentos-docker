@@ -25,7 +25,7 @@ Use the coding agent's structured user-input control when available (Claude Code
 
 "Build me a GitHub PR reviewer" is a complete brief. **Ask nothing.** Design it (Step 2), then state what you're building in one message and start:
 
-> Building **PR Reviewer** (`pr-reviewer`) — reads open PRs on a repo and summarizes what changed and what looks risky. Uses `GithubTools`; needs `GITHUB_ACCESS_TOKEN`, which is already in your `.env`. Building now — stop me if that's not what you meant.
+> Building **PR Reviewer** (`pr-reviewer`) — reads open PRs on a repo and summarizes what changed and what looks risky. Uses `GithubTools`; needs `GITHUB_ACCESS_TOKEN`, which is already in your `.env`. Building now — stop me if I've read it wrong.
 
 Don't wait for a reply. Only pause if something is genuinely missing (see **Stop only for this**).
 
@@ -54,7 +54,7 @@ Build what makes *their* week easier. Resist the demo classics (news digest, gen
 | Decision | How you decide it |
 |---|---|
 | **Pattern** | **Direct tools** (mirror [`agents/web_search.py`](../../../agents/web_search.py)) when the agent uses ≤2 toolkits — this is the common case. **Context provider** (mirror the `codebase_context` wiring in [`agents/platform_manager.py`](../../../agents/platform_manager.py)) when it queries one information source through a single `query_<thing>` tool, or you're hiding a sub-agent. Pick one and mention it in a clause; never make the user choose. |
-| **Slug** | Derive it from the purpose (`pr-reviewer`, `linear-triager`). Kebab-case. State it, don't ratify it. |
+| **Slug** | Derive it from the purpose (`pr-reviewer`, `linear-triager`). Kebab-case. State it, don't ask for sign-off. |
 | **Model** | `default_model()` — already `gpt-5.6-sol`. Override only if the user asks. |
 | **Toolkits** | Choose from what the discovery answers imply, grounded in agno docs (Step 2). Prefer keyless toolkits (HackerNews, ArXiv, Wikipedia, DuckDuckGo via `WebSearchTools`) when they'd serve just as well — a keyless agent works on the first try. |
 | **Memory / history** | The defaults in the template pattern. Don't ask. |
@@ -64,7 +64,7 @@ Build what makes *their* week easier. Resist the demo classics (news digest, gen
 An API key that the chosen toolkit **requires** and that isn't in `.env`. Check `.env` yourself first — don't ask the user what's in a file you can read. If a key is genuinely missing, say which toolkit needs it and offer the two real choices:
 
 - add the key to `.env` now (they paste it in; never read or print it), or
-- swap to a keyless toolkit and build right now.
+- swap to a keyless toolkit — or a keyless variant of the idea — and build right now. (Some jobs have no keyless route; then the key is the only real choice, so say so plainly.)
 
 Everything else — proceed and report.
 
@@ -219,16 +219,16 @@ docker logs agentos-api --since 30s 2>&1 | grep -E "Running: \w+\(" | head -40
 
 - **HTTP 404** — the agent isn't registered, the container wasn't restarted, or your edits aren't reaching the bind-mount. Re-check Step 4 and Step 6. If both look right, run `docker inspect agentos-api --format '{{ range .Mounts }}{{ .Source }} → {{ .Destination }}{{ "\n" }}{{ end }}'` to confirm `/app` is bound to *this* repo's path (a stale clone or a different worktree is a common cause).
 - **HTTP 5xx** — read `docker logs agentos-api --tail 50` for the traceback. Most failures are import errors, missing env vars, or a typo in the agent's `tools=` list.
-- **Empty response** — check the logs for tool call errors (rate limits, missing API keys, MCP server unreachable). Surface the issue to the user; don't paper over it.
+- **Empty response** — check the logs for tool call errors (rate limits, missing API keys, MCP server unreachable). Tell the user what went wrong; don't paper over it.
 - **Tool not firing when expected** — the instruction prompt isn't strong enough. Tell the user; suggest tightening or running [`improve-agent`](../improve-agent/SKILL.md) once the agent is loaded.
 
-Iterate at most 2-3 times on the prompt before stopping and surfacing the question to the user.
+Iterate at most 2-3 times on the prompt before stopping and asking the user.
 
 ## 9. Done
 
 When the smoke test passes:
 
-1. **Show them their agent working.** Lead with the answer it just gave in the smoke test — that's their idea, alive, in their own words. Then the slug, and where to reach it: `https://os.agno.com` — hit **Refresh** (top right) and it's in the Agents list next to the built-in ones — or `http://localhost:8000` directly if their OS isn't connected. It's also exposed through the AgentOS MCP endpoint at `/mcp` (`run_agent` tool).
+1. **Show them their agent working.** Lead with the answer it just gave in the smoke test — that's their idea, alive, in their own words. Then the slug, and where to reach it: `https://os.agno.com` — hit **Refresh** (top right) and it's in the Agents list next to the built-in ones, or `http://localhost:8000` directly if their OS isn't connected. It's also exposed through the AgentOS MCP endpoint at `/mcp` (`run_agent` tool).
 2. **Hand them the loop.** The agent they just built is a first draft, and both ways to sharpen it are already in this session:
    - [`/extend-agent`](../extend-agent/SKILL.md) — they drive: add a tool or source, teach it a new trick, fix something it got wrong.
    - [`/improve-agent`](../improve-agent/SKILL.md) — you drive: probe it against its own `INSTRUCTIONS`, judge, edit, re-probe until it's reliable. No input needed from them.

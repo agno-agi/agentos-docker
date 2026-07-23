@@ -1,0 +1,113 @@
+---
+name: deploy-platform
+description: Deploy this AgentOS to production with this template's deploy scripts — preflight the provider CLI and account, run the up.sh script, complete the JWT key step, verify the live platform on its public URL, then hand over the redeploy/logs/teardown instructions. Use this skill when the user asks to deploy, ship to production, go live, or take the platform to prod.
+---
+
+# Deploy the Platform
+
+> _**Coding-agent workflow** — a `/slash-command` your coding agent (Claude Code, Codex, others) runs while developing this repo. Invoke it by name (e.g. `/deploy-platform`) or describe the task and it triggers automatically._
+
+You are taking a locally-proven platform to a live public URL. The wow moment is Step 5 — the platform answering on its own domain, gated by real auth, with the AgentOS UI connected **Live**. Deploying creates real, billed cloud resources: say so before creating anything, and name the teardown script in the same breath so the exit is always visible.
+
+**Be self-driving:** run every script and check yourself. Stop when progress needs a human: a provider login, a browser-only step, a key only they can mint. When you stop, give exact instructions — and for interactive commands (logins, guided prompts), tell the user to run them in a separate terminal window (their own Terminal/iTerm, not this chat: CLI logins need a real TTY plus a browser, and won't run without them). Never print or echo secret values; the two exceptions are the JWT verification key (a public key) and the MCP connect secret the up script prints in its own summary — both are meant for the user's hands.
+
+**Narrate the trip:** open with the map and the cost sentence together, shaped like this — tune the names to this repo and the mode you picked, keep the shape — then a line as each step starts and a word when it lands:
+
+```text
+Kicking off /deploy-platform. Here's the map for this trip:
+
+1. Read the deploy layer — this repo's scripts + README, pick the mode
+2. Preflight — provider CLI + login, cost and exit, production env
+3. Deploy — the up script (compute + Postgres + public domain)
+4. JWT key — connect os.agno.com Live, land the public key, sync it
+5. Prove it live — logs, /docs 200, /mcp 401 challenge, UI Connect
+6. Hand over — redeploy, logs, teardown, chat + coding-agent connect
+
+One thing up front: this creates real, billed resources on your account.
+The exit is always one command away — the down script deletes everything
+(it asks you to confirm; --yes skips).
+```
+
+## 1. Read the deploy layer
+
+Read [`AGENTS.md`](../../../AGENTS.md), the README's production/deploy section, and the deploy scripts under `scripts/` — they are the provider truth this skill conducts; never invent a step they don't have. Then pick the mode by **who provisions the target**, not by which files exist:
+
+- **Conduct** (this skill's main path): the up script provisions the compute *and* the public URL on a managed cloud provider (`up.sh`, `env-sync.sh`, `redeploy.sh`, `down.sh` under `scripts/<provider>/`).
+- **Conduct over owned infra**: the same quartet exists, but it deploys onto infrastructure the user already owns (their own Kubernetes cluster and registry image). Drive the scripts like Conduct, with Step 7's inversions on top — the public URL is an input, and the scripts themselves bill nothing.
+- **Manual-guide**: no deploy quartet at all — self-hosted compose (`compose.prod.yaml`) on the user's own host. Say plainly that production here is a manual setup this skill guides but doesn't drive: walk the README's deploy section with them, carrying Step 4's key hand-off and Step 5's probes, with Step 7's inversions.
+
+## 2. Preflight
+
+Four checks before anything is created:
+
+- **CLI + account.** Confirm the provider CLI the deploy scripts use is installed, and authed with a read-only probe (the scripts show which — a `whoami`-style command). Not logged in → stop and hand them the login command to run in a separate terminal window; when they say ready, re-run the auth probe to confirm before moving on.
+- **Cost + exit.** One sentence: this creates billed resources on their account, and `down.sh` (typed-name confirm; `--yes` for automation) deletes everything. No surprises in either direction.
+- **Production env.** The env file the README names (usually `.env.production`; `cp example.env .env.production` if missing), with a real `OPENAI_API_KEY` — the up script refuses without it; help them set it the way setup-platform does (editor paste — never read or print it). `RUNTIME_ENV` must **not** be `dev` in this file: it syncs to the cloud, and `dev` there disables production auth.
+- **Unattended-run env.** Skim the up script's header and the README for provider-specific env a non-interactive run needs to stay unattended — an org or workspace id that a sub-CLI would otherwise prompt for is the classic case. Get it set before you run anything.
+
+## 3. Deploy
+
+Run the up script. It is built for this: every pause the script itself owns is TTY-guarded, so under your shell it skips cleanly and prints its recovery path instead of hanging (sub-CLIs it calls are why Step 2's unattended-run check matters). Narrate the phases as they stream. Expectations to set:
+
+- First creates can be slow on some providers — twenty-plus minutes is normal; keep polling, don't declare failure early.
+- If the README names a browser step (e.g. applying a blueprint in the provider dashboard), relay those instructions first, then start the up script — its own poll absorbs the wait for the click.
+- When it finishes, read the live URL back from `AGENTOS_URL` in the env file — the script created the domain and persisted it there.
+- **A keyless first deploy refusing to start is by design, not failure:** with production auth on and no JWT key, the app exits at startup on purpose, so expect a crash-looping service. Tell the user this before they see it — the provider dashboard will show the deploy failing or restarting until the key lands in the next step; expected, deliberate, fixed by the key. Then check the provider logs yourself (the README names the command; bound the read with a lines/limit flag — streaming forms run forever) and confirm the startup error is the missing JWT key — any other error, fix it first.
+
+## 4. The JWT key
+
+The platform is deployed and waiting for its key. Frame the moment warmly and honestly: the deploy landed, but the platform isn't live *yet* — it ships with authorization on by default, because without it the platform would be public to anyone with the URL. So it's waiting for its key before it serves, and this is the one piece only the user can add; the moment it lands, the platform comes up on its own. Be clear the flow is paused on them — don't dress it up as background progress — but keep the tone friendly and humble, never "I won't move forward": you're explaining a sensible default, not issuing an ultimatum. The message that asks for the key carries everything they need — render the table and the mint path fresh, in that same message, even if you showed them earlier; never say "see the table above", scrollback is where instructions go to die.
+
+The connection:
+
+| Setting | Value |
+|---|---|
+| AgentOS UI | https://os.agno.com |
+| Connection type | **Live** |
+| Endpoint | `https://<the AGENTOS_URL domain>` |
+| Name | `Live AgentOS` |
+
+Then the mint path, spelled out as numbered clicks:
+
+1. **Connect OS** → **Live** → enter the endpoint from the table → name it. (Live connections are a paid feature — `PLATFORM30` takes a month off.)
+2. Flip **Token-Based Authorization (JWT)** on — the toggle is right on the connect panel — then **Connect**. The UI generates the public key; copy it, that's the one we need.
+3. Already connected, or can't find the toggle? **Settings → OS & Security → Token-Based Authorization (JWT)** — turn it on there and copy the key. Always mention this fallback.
+
+Then offer both hand-offs, their choice:
+
+- **paste the key right here in chat** — it's a public verification key, safe to share — and you write it into `.env.production` yourself, or
+- **paste it into `.env.production`** on the `JWT_VERIFICATION_KEY=` line and say ready.
+
+Either way the PEM must land **quoted, preserving its own line breaks** — multi-line inside the quotes, exactly as the README's example shows; an unquoted or newline-collapsed PEM breaks parsing. Then push it with `env-sync.sh` — it applies the change itself (a restart, new revision, or deploy, depending on the provider); confirm from its closing message.
+
+And name the one honest alternative in the same message, clearly not recommended: authorization *can* be turned off (`RUNTIME_ENV=dev` in the production env file, then sync) — but that makes the AgentOS public, anyone with the URL can run the agents and read the data. Say you don't recommend it and why; the key is the way.
+
+## 5. Prove it live
+
+This is the payoff of deploying with a coding agent — you can verify the platform, not just start it. Every probe goes to the **public domain**, never localhost (deployed MCP once broke while every localhost check passed):
+
+- Provider logs (bounded read): clean boot, no tracebacks, schedules registered.
+- `https://<domain>/docs` → 200. This works even with auth on — the JWT middleware deliberately excludes it.
+- `https://<domain>/mcp` → **401 with a `WWW-Authenticate` challenge**: mounted *and* gated, exactly right. A 200 here means the endpoint is wide open — stop and find out why before going further.
+- An API route, e.g. `https://<domain>/agents` → **401**. This is the dev-leak tripwire: a 200 means JWT is off — `RUNTIME_ENV=dev` reached the synced env; stop and fix.
+- Tell the user to hit **Connect** on the os.agno.com Live screen from Step 4 — the UI connecting over real auth is the end-to-end proof, and where they chat with the live platform.
+
+Close the step by showing what you verified, compactly — their platform is live and locked.
+
+## 6. Hand over the loop
+
+Finish with what they own now:
+
+- code changes → `redeploy.sh`; config or secret changes → edit `.env.production`, then `env-sync.sh`
+- logs → the provider command from the README
+- teardown → `down.sh` (type the resource name it shows to confirm; `--yes` skips the prompt)
+- chat apps → connect claude.ai / ChatGPT to `https://<domain>/mcp` over OAuth; the consent secret is the `MCP_CONNECT_SECRET` the up script saved into `.env.production`
+- coding agents → `uvx agno connect --url https://<domain>`
+
+## 7. Owned-infrastructure inversions
+
+These apply on top of Steps 2–6 whenever the target is infrastructure the user owns (the second and third modes from Step 1):
+
+- **Get the key in before the first boot.** A keyless production boot exits at startup by design, and on owned infra there's no managed control plane quietly retrying — a keyless install crash-loops or times out its wait. Do Step 4's key hand-off first, into the env file the README names, then deploy.
+- **The public URL is an input, not an output.** Nothing provisions a domain here; the user supplies one (an ingress host, a tunnel), and `AGENTOS_URL` must be set to it or scheduled jobs silently never fire.
+- **Check the aim before anything mutates.** On Kubernetes, confirm the current kubectl context is the intended cluster — a non-interactive deploy lands wherever the context points.

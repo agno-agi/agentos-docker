@@ -28,10 +28,11 @@ def _register(
     endpoint: str,
     payload: dict[str, Any],
     description: str,
+    enabled: bool = True,
 ) -> None:
-    """Create or update one schedule; a failure logs a warning instead of crashing startup."""
+    """Create or update a schedule; failures log a warning instead of crashing the app."""
     try:
-        manager.create(
+        schedule = manager.create(
             name=name,
             cron=cron,
             endpoint=endpoint,
@@ -39,18 +40,35 @@ def _register(
             description=description,
             if_exists="update",
         )
+        # A new schedule lands in the DB with updated_at unset; follow-on writes
+        # (updates, enable/disable) set it. Unset means this boot created the row.
+        created = schedule.updated_at is None
+        if created and not enabled:
+            disabled = manager.disable(schedule.id)
+            if disabled is None or disabled.enabled:
+                raise RuntimeError("created enabled but could not be disabled — will retry next boot")
     except Exception as exc:
         log_warning(f"schedules: could not register '{name}': {exc}")
     else:
-        log_info(f"schedules: registered '{name}'")
+        if created and not enabled:
+            log_info(f"schedules: registered '{name}' (disabled — enable it from the AgentOS UI)")
+        else:
+            log_info(f"schedules: registered '{name}'")
 
 
 def register_schedules() -> None:
     """Register schedules (idempotent and fail-soft).
 
-    The deployment check runs daily by default. Scheduled evals are opt-in because they use model calls.
-    To add your own, add an `_register(...)` call below — guard it with an env flag if it should be optional.
+    The deployment check runs daily by default. Run-evals is registered but
+    disabled because it uses model calls. Turn it on from the AgentOS UI.
     """
+    if getenv("ENABLE_SCHEDULED_EVALS") is not None:
+        log_warning(
+            "schedules: ENABLE_SCHEDULED_EVALS is no longer read — the run-evals schedule is "
+            "always registered and its enabled state is managed from the AgentOS UI or the "
+            "/schedules API."
+        )
+
     try:
         manager = ScheduleManager(get_postgres_db())
     except Exception as exc:
@@ -69,14 +87,12 @@ def register_schedules() -> None:
     else:
         log_info("schedules: deployment-check disabled (ENABLE_DEPLOY_CHECK=False)")
 
-    if env_flag("ENABLE_SCHEDULED_EVALS", default=False):
-        _register(
-            manager,
-            name="run-evals",
-            cron="0 14 * * *",  # 14:00 UTC daily
-            endpoint="/workflows/run-evals/runs",
-            payload={"message": "Scheduled eval run."},
-            description="Daily: run the eval suite and report regressions.",
-        )
-    else:
-        log_info("schedules: run-evals disabled (ENABLE_SCHEDULED_EVALS=True to enable)")
+    _register(
+        manager,
+        name="run-evals",
+        cron="0 14 * * *",  # 14:00 UTC daily
+        endpoint="/workflows/run-evals/runs",
+        payload={"message": "Scheduled eval run."},
+        description="Daily: run the eval suite and report regressions.",
+        enabled=False,
+    )

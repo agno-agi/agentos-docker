@@ -63,7 +63,7 @@ Read every file in scope. Build a mental model of:
 - **Manifest** — what's in [`app/config.yaml`](../../../app/config.yaml) under `manifest` (description + quick prompts per component)?
 - **Eval cases** — what's in [`evals/cases.py`](../../../evals/cases.py)?
 - **Registered workflows** — what's imported into [`app/main.py`](../../../app/main.py) and passed to `AgentOS(workflows=[...])`? Workflow files on disk in [`workflows/`](../../../workflows/)?
-- **Schedules** — what `register_schedules()` ([`app/schedules.py`](../../../app/schedules.py)) registers, and the env that gates each (e.g. `ENABLE_DEPLOY_CHECK`). Every schedule `endpoint` should map to a real workflow `id`.
+- **Schedules** — what `register_schedules()` ([`app/schedules.py`](../../../app/schedules.py)) registers: the env gate where one exists (`ENABLE_DEPLOY_CHECK`), and run-evals' ships-disabled posture (its enabled bit is user-owned via the AgentOS UI after first creation). Every schedule `endpoint` should map to a real workflow `id`.
 - **Scripts** — for each file in [`scripts/`](../../../scripts/), what does it actually do? (Headers and the first few lines are usually enough.)
 
 Don't write anything yet — read first, fix once.

@@ -125,7 +125,7 @@ async def run_deployment_check() -> str:
 
     A diagnostic, not a mutation: deterministic, free (no model calls), and idempotent —
     it observes DB connectivity, auth config, scheduler URL, MCP reachability, Slack env,
-    schedule flags, and component imports. The run persists like any workflow run, so
+    schedule state, and component imports. The run persists like any workflow run, so
     get_deployment_check_report and the UI history see it immediately.
     """
     # Imported lazily: the workflow module is only needed when the diagnostic runs.

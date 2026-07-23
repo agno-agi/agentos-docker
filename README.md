@@ -4,7 +4,7 @@ AgentOS turns your agents into a production API. One AI backend that serves ever
 
 1. **Your product.** Call the REST API from your app: run agents, stream responses, and manage sessions, memory, and knowledge.
 2. **AgentOS UI.** Chat with agents, build new ones, and inspect sessions, traces, memory, and evals from the AgentOS UI at [os.agno.com](https://os.agno.com?utm_source=github&utm_medium=example-repo&utm_campaign=agentos-docker&utm_content=agentos-docker&utm_term=docker).
-3. **Coding agents.** Manage the full agent development lifecycle (create, extend, improve, eval and review) using the skills in [`.agents/skills/`](.agents/skills/).
+3. **Coding agents.** Manage the full agent development lifecycle (create, extend, improve, eval, review — and deploy) using the skills in [`.agents/skills/`](.agents/skills/).
 4. **AI apps.** MCP clients like Claude and ChatGPT can use your agents through the MCP server at `/mcp`.
 5. **Chat interfaces.** Chat with your agents from Slack, WhatsApp, Telegram, and Discord.
 
@@ -70,7 +70,7 @@ Click **Chat** under **Platform Manager** and ask: "How healthy is the platform?
 
 ## Run in production
 
-This template carries no cloud-provider layer at all: production is the same Docker Compose you already ran locally, plus the [`compose.prod.yaml`](compose.prod.yaml) override — on any host you control. A VPS, a home server, an office box, this laptop. If you'd rather have a managed platform provision the database and the URL for you, use one of the cloud variants of this template ([agentos-railway](https://github.com/agno-agi/agentos-railway) is the reference).
+This template carries no cloud-provider layer at all: production is the same Docker Compose you already ran locally, plus the [`compose.prod.yaml`](compose.prod.yaml) override — on any host you control. A VPS, a home server, an office box, this laptop. A coding-agent skill, [`/deploy-platform`](.agents/skills/deploy-platform/SKILL.md), guides you through it. If you'd rather have a managed platform provision the database and the URL for you, use one of the cloud variants of this template ([agentos-railway](https://github.com/agno-agi/agentos-railway) is the reference).
 
 > **Prerequisite:** a host with Docker (Compose v2.24.4 or newer — the prod override uses the `!reset`/`!override` merge tags), and a way for the internet to reach port 8000 on it — a domain with a reverse proxy, or a tunnel.
 
@@ -118,12 +118,10 @@ Token-Based Auth gives you three things:
 
 Mint the key at os.agno.com against your public URL:
 
-1. Open [os.agno.com](https://os.agno.com?utm_source=github&utm_medium=example-repo&utm_campaign=agentos-docker&utm_content=agentos-docker&utm_term=docker), click **Connect OS** → **Live**, enter your public URL, and connect.
-2. Name it **Live AgentOS**.
-3. Go to **Settings** → **OS & Security**.
-4. Turn **Token-Based Authorization (JWT)** on.
-5. Copy the public key.
-6. Paste it into `.env` **with quotes**, so Docker Compose reads the multi-line PEM as one value:
+1. Open [os.agno.com](https://os.agno.com?utm_source=github&utm_medium=example-repo&utm_campaign=agentos-docker&utm_content=agentos-docker&utm_term=docker), click **Connect OS** → **Live**, and enter your public URL.
+2. Name it **Live AgentOS**, flip **Token-Based Authorization (JWT)** on — the toggle is right on the connect panel — and connect. The UI generates your public key. (Already connected without it? **Settings** → **OS & Security** → **Token-Based Authorization (JWT)**.)
+3. Copy the public key.
+4. Paste it into `.env` **with quotes**, so Docker Compose reads the multi-line PEM as one value:
 
 ```sh
 JWT_VERIFICATION_KEY="-----BEGIN PUBLIC KEY-----
@@ -249,7 +247,6 @@ can you access my agentos mcp?
 | `MCP_CONNECT_SECRET` | no | none | If set (≥16 chars, e.g. `openssl rand -base64 32`), `/mcp` becomes its own OAuth 2.1 authorization server so claude.ai and ChatGPT (web) can connect; connecting asks for this secret on a consent page. Requires `AGENTOS_URL`. Set it in `.env` — dev reads the same file, so it gates the local `/mcp` too. PAT and JWT bearers keep working alongside. |
 | `AGENTOS_MCP_SIGNING_KEY` | no | none | Optional high-entropy signing-key material (≥32 chars) for OAuth tokens. Unset, a strong key is generated and persisted in the database. Rotating it invalidates outstanding tokens. |
 | `ENABLE_DEPLOY_CHECK` | no | `True` | The reference deployment-check cron runs daily by default. Set `False` to disable; the workflow is runnable on demand regardless. |
-| `ENABLE_SCHEDULED_EVALS` | no | `False` | If `True`, schedules the run-evals workflow daily. Off by default because it uses model calls. |
 | `EVALS_TAG` | no | `smoke` | Eval tag run by the run-evals workflow. |
 | `EVALS_CASE_TIMEOUT_SECONDS` | no | `90` | Default per-case timeout for run-evals runs; applies only to cases that don't set their own `timeout_seconds`. |
 | `EVALS_SUITE_TIMEOUT_SECONDS` | no | `900` | Whole-suite timeout for run-evals runs; per-case timeouts are the granular limit. The default bounds the `smoke` tag's worst case (incl. builder-case teardown). |
