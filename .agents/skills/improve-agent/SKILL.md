@@ -158,7 +158,7 @@ Summarize for the user:
 - `git diff agents/<slug>.py` (one short block).
 - Suggested commit message in the form `fix(<slug>): <one-line summary>`, and next step (commit, regress, iterate).
 
-For a regression check across the committed eval suite, see [`eval-and-improve`](../eval-and-improve/SKILL.md).
+For a regression check across the committed eval suite, see [`eval-and-improve`](../eval-and-improve/SKILL.md). And if a probe caught a real issue, don't let it evaporate — offer to graduate it into a committed case via [`create-evals`](../create-evals/SKILL.md), so the regression you just fixed stays fixed.
 
 ---
 

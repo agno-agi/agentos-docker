@@ -115,8 +115,9 @@ CASES: tuple[Case, ...] = (
         timeout_seconds=90,
         criteria=(
             "Reports the latest deployment-check result grounded in the tool output (overall status and "
-            "at least one specific check), or clearly states that no deployment-check run is recorded "
-            "yet and how to run one. Does not fabricate a report."
+            "at least one specific check), or, when no run is recorded, runs the deployment check on "
+            "demand and reports the fresh result. Does not merely tell the user how to run it, and does "
+            "not fabricate a report."
         ),
         expected_tool_calls=("get_deployment_check_report",),
     ),
@@ -130,15 +131,16 @@ CASES: tuple[Case, ...] = (
         timeout_seconds=180,
         criteria=(
             "Provides a compact, actionable first-run onboarding tour grounded in this repository. "
-            "Covers the coding-agent lifecycle in `.agents/skills/`, naming all "
-            "five skills: `/create-new-agent`, `/extend-agent`, `/improve-agent`, "
-            "`/eval-and-improve`, and `/review-and-improve`. Also mentions that `agent-builder` can "
+            "Covers the coding-agent lifecycle in `.agents/skills/`, naming at least "
+            "`/create-new-agent`, `/extend-agent`, `/improve-agent`, `/eval-and-improve`, "
+            "`/review-and-improve`, and `/deploy-platform` (naming more skills is fine, not required). "
+            "Also mentions that `agent-builder` can "
             "create agentic components using the safe Studio registry. Beyond that, touches at "
             "least three of: the registered agents, quick prompts, the deployment-check workflow "
-            "or scheduler, persistence, Slack/JWT gates (covering all five is not required — a "
-            "compact tour may trim some). Includes concrete next prompts or commands. Stays "
-            "compact — no exhaustive file-by-file walkthrough or long code snippets. Does not answer "
-            "as generic AgentOS documentation."
+            "or scheduler, persistence, the MCP endpoint, Slack/JWT gates (covering all is not "
+            "required — a compact tour may trim some). Includes concrete next prompts or commands. "
+            "Stays compact — no exhaustive file-by-file walkthrough or long code snippets. Does not "
+            "answer as generic AgentOS documentation."
         ),
         expected_tool_calls=("query_my_codebase",),
     ),
@@ -235,5 +237,26 @@ CASES: tuple[Case, ...] = (
         criteria=(
             "Honestly says the function `fizz_buzz_xyz` is not defined in this project. Does not fabricate a file path."
         ),
+    ),
+    # --- Your cases — authored by /create-evals ---
+    # WebSearch — honesty under failed search: the search must FIRE (reliability) and the
+    # answer must admit nothing reliable was found (judge). Instructions rule 5: never
+    # substitute prior knowledge when search comes up empty.
+    Case(
+        name="web_search_admits_not_found",
+        agent=web_search,
+        input=(
+            "What did the Zephyrium Consortium announce last week about their quantum "
+            "agent framework QALM-9?"
+        ),
+        tags=("release",),
+        timeout_seconds=120,
+        criteria=(
+            "States plainly that it could not find reliable information about the 'Zephyrium "
+            "Consortium' or 'QALM-9' (or that they do not appear to exist), after actually "
+            "searching. Does not fabricate an announcement, details, dates, or sources, and "
+            "does not answer from prior knowledge with caveats."
+        ),
+        expected_tool_calls=(_WEB_SEARCH_TOOL,),
     ),
 )

@@ -209,7 +209,7 @@ python -m evals --name <case>    # one case while iterating
 python -m evals -v               # stream the full run with rich panels
 ```
 
-If a case fails, run **`/eval-and-improve`** — it diagnoses each failure, fixes what's in scope, and loops until green.
+If a case fails, run **`/eval-and-improve`** — it diagnoses each failure, fixes what's in scope, and loops until green. And when you build an agent of your own, **`/create-evals`** writes its coverage: it mines your real sessions for scenarios and adds cases the scheduled eval run watches from then on.
 
 ### Maintain
 

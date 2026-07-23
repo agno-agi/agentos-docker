@@ -1,6 +1,6 @@
 ---
 name: eval-and-improve
-description: Run the eval suite (python -m evals), diagnose every failure, fix what's in scope, and loop until all cases pass. Use when evals are failing, or when the user wants to run, diagnose, or repair the eval suite.
+description: Run the eval suite (python -m evals), diagnose every failure, fix what's in scope, and loop until all cases pass. Use when evals are failing — including overnight run-evals schedule failures — or when the user wants to run, diagnose, or repair the eval suite. To author new coverage, use create-evals instead.
 ---
 
 # Eval and Improve
@@ -28,6 +28,8 @@ python -m evals -v                     # stream the full agent run with rich pan
 
 Output ends with a summary block. Exit code is 0 on all-pass, non-zero on any failure or error.
 
+**Arriving from a scheduled failure?** If the trigger is "last night's run-evals went red" rather than a local run, start from the recorded history: eval runs live in Postgres (`db.get_eval_runs()` — also visible at os.agno.com, or ask Platform Manager), so find which case failed and when, then reproduce it locally with `python -m evals --name <case>` before diagnosing. A scheduled failure that won't reproduce locally is usually environment (rate limits, a live source that moved) — note it, don't chase it with prompt edits.
+
 Stderr noise around MCP teardown (`RuntimeError: Event loop is closed`, httpx timeouts) at the end of a run is harmless — only the `Eval Summary` table and exit code count.
 
 ## 2. Diagnose each failure
@@ -49,7 +51,9 @@ For every failed case, decide which kind of failure it is and fix at the appropr
 
 **Rule:** never weaken a case to make it green. Edit a case only when the assertion was wrong (overspecified rubric, wrong tool name, mismatch with how the agent's tools are named today). Catching a real regression is the whole point.
 
-Quick test for "wrong assertion vs. real regression": read the response yourself. If it looks correct against the user's intent but the rubric flagged a missing detail, the rubric was overspecified. If the response is genuinely wrong, the agent's instructions need work.
+Quick test for "wrong assertion vs. real regression": read both sides — the agent's actual response next to the judge's stated reason (`--json-output` carries `judge_reason`). If the response looks correct against the user's intent but the rubric flagged a missing detail, the rubric was overspecified. If the response is genuinely wrong, the agent's instructions need work.
+
+And when you touch a case, check the green is earned, not just present: the expected tool actually fired, and the rubric can't be satisfied by a shortcut (answering from memory without searching, citing sources it never fetched). Repair means making red green *and* making green honest.
 
 ## 3. Fix scope
 
@@ -85,7 +89,7 @@ Stop when `python -m evals --tag release` exits 0 **and** prints an `Eval Summar
 
 ## 5. Add a new case (if needed)
 
-If diagnosing a failure reveals a missing assertion, add it to [`evals/cases.py`](../../../evals/cases.py):
+If diagnosing a failure reveals a missing assertion, add it to [`evals/cases.py`](../../../evals/cases.py). (That's the one authoring move that belongs here — for coverage-shaped work, an agent with no cases at all, or mining sessions for scenarios, hand off to [`create-evals`](../create-evals/SKILL.md).)
 
 ```python
 Case(

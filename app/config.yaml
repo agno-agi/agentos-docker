@@ -9,10 +9,11 @@ manifest:
       - "Build a workflow that researches a topic, drafts a report, and works with me on improving it"
 
   platform-manager:
-    description: "Provides read-only diagnostics and codebase context."
+    description: "Understands, monitors, and explains this AgentOS — codebase context plus read-only runtime diagnostics, with next-step recommendations."
     quick_prompts:
       - "Describe this platform: agents, workflows, and schedules"
-      - "How healthy is the platform? Check the latest deployment check and eval history"
+      - "Run a deployment check and explain anything that fails"
+      - "What's scheduled to run, and did the last triggers succeed?"
       - "Teach me how to use this AgentOS"
 
   web-search:

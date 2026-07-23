@@ -4,7 +4,7 @@ This file is the source of truth for any agent (Claude Code, Codex, others) work
 
 ## Project Overview
 
-**AgentOS: FastAPI for agents — one AI backend for every frontend.** AgentOS is an agent server built on [Agno](https://docs.agno.com) that turns your agents into a production API that attaches to any client: **REST API** for programmatic use, **chat interfaces** for humans (Slack is wired in; WhatsApp/Telegram/Discord mirror the same pattern), and **MCP** at `/mcp` for AI apps (claude.ai, ChatGPT, Cursor, Claude Code) — which work *through* the platform, not just on it. The repo itself is designed for coding agents to build and extend. It comes with seven coding agent skills that cover platform setup, the full agent development lifecycle, and the production deploy, plus two platform agents — Agent Builder (creates agents, teams, and workflows) and Platform Manager (understands, monitors, and explains the platform) — and WebSearch as the simplest sample agent to copy. Postgres (pgvector) handles persistence for sessions, memory, and knowledge. Runs locally via Docker; this template also runs production with Docker — on any host you control, with no cloud provider in between — and is the self-hosted sibling of the `agentos-*` deployment family — see [Portable core vs. deploy layer](#portable-core-vs-deploy-layer).
+**AgentOS: FastAPI for agents — one AI backend for every frontend.** AgentOS is an agent server built on [Agno](https://docs.agno.com) that turns your agents into a production API that attaches to any client: **REST API** for programmatic use, **chat interfaces** for humans (Slack is wired in; WhatsApp/Telegram/Discord mirror the same pattern), and **MCP** at `/mcp` for AI apps (claude.ai, ChatGPT, Cursor, Claude Code) — which work *through* the platform, not just on it. The repo itself is designed for coding agents to build and extend. It comes with eight coding agent skills that cover platform setup, the full agent development lifecycle, and the production deploy, plus two platform agents — Agent Builder (creates agents, teams, and workflows) and Platform Manager (understands, monitors, and explains the platform) — and WebSearch as the simplest sample agent to copy. Postgres (pgvector) handles persistence for sessions, memory, and knowledge. Runs locally via Docker; this template also runs production with Docker — on any host you control, with no cloud provider in between — and is the self-hosted sibling of the `agentos-*` deployment family — see [Portable core vs. deploy layer](#portable-core-vs-deploy-layer).
 
 ## Architecture
 
@@ -45,7 +45,7 @@ Shared:
 | [`db/url.py`](db/url.py) | Builds the database URL from env. |
 | [`evals/cases.py`](evals/cases.py) | Eval cases (each is a `Case` with optional judge + reliability checks). |
 | [`evals/__main__.py`](evals/__main__.py) | `python -m evals` — thin entrypoint over agno's eval suite runner (`agno.eval.cli`). |
-| [`.agents/skills/`](.agents/skills/) | Dev-time **coding-agent workflows** (`setup-platform`, `create-new-agent`, `extend-agent`, `improve-agent`, `eval-and-improve`, `review-and-improve`, `deploy-platform`) — slash commands coding agents run *on this repo*. `.claude/skills` is a committed symlink into it — see [Working with coding agents](#working-with-coding-agents). |
+| [`.agents/skills/`](.agents/skills/) | Dev-time **coding-agent workflows** (`setup-platform`, `create-new-agent`, `extend-agent`, `improve-agent`, `create-evals`, `eval-and-improve`, `review-and-improve`, `deploy-platform`) — slash commands coding agents run *on this repo*. `.claude/skills` is a committed symlink into it — see [Working with coding agents](#working-with-coding-agents). |
 | [`README.md`](README.md) | Public entry point — its Get Started prompt hands a coding agent to the `setup-platform` skill (clone to first agent). |
 | [`compose.yaml`](compose.yaml) | Docker Compose for local development. |
 | [`compose.prod.yaml`](compose.prod.yaml) | Production override — `RUNTIME_ENV=prd` (JWT on), no bind mount or hot reload, `AGENTOS_URL` and `MCP_CONNECT_SECRET` from `.env`. |
@@ -163,7 +163,7 @@ The eval suite lives in [`evals/`](evals/) and runs on agno's eval suite runner 
 
 Run with `python -m evals --tag smoke`, `python -m evals --tag release`, or `python -m evals --name <case>`. Add `--json-output out.json` when a workflow or coding agent needs machine-readable results. Results log to Postgres via `db=eval_db` so history is visible at os.agno.com.
 
-To diagnose failures and fix in scope, run the `/eval-and-improve` skill ([`.agents/skills/eval-and-improve`](.agents/skills/eval-and-improve/SKILL.md)) in Claude Code.
+Two skills work this suite from opposite ends. To author coverage — especially for agents you build, which start with none — run [`/create-evals`](.agents/skills/create-evals/SKILL.md): it maps what an agent promises, mines real sessions from Postgres for scenarios, and writes audited cases into a marked user-cases section it adds to `evals/cases.py` on first use. To diagnose failures and fix in scope, run [`/eval-and-improve`](.agents/skills/eval-and-improve/SKILL.md).
 
 ## Reviewing the repo
 
@@ -179,6 +179,7 @@ These workflows cover platform setup, the agent-development lifecycle, and the p
 - **`/create-new-agent`** — scaffold a new agent: guided discovery or from a concrete idea → generate `agents/<slug>.py`, register it, smoke-test it live.
 - **`/extend-agent`** — you drive. Add a tool/source, refine `INSTRUCTIONS`, fix a known bug. Uses the `agno-docs` MCP for grounded toolkit research.
 - **`/improve-agent`** — Claude drives. Derives probes from the agent's `INSTRUCTIONS`, judges, edits, re-runs. No user input needed.
+- **`/create-evals`** — author eval coverage for an agent: map its promises, mine real sessions from Postgres for scenarios, propose capabilities, write and audit `Case` entries. How a user's own agents join the suite.
 - **`/eval-and-improve`** — run the eval suite, diagnose failures, fix in scope until green.
 - **`/review-and-improve`** — repo-wide drift sweep (docs vs code vs config).
 - **`/deploy-platform`** — take the proven local platform to production on your own host: with no deploy scripts here, the skill guides rather than drives — it walks the README's deploy section with you (public URL, production env, the JWT key step), then verifies the live platform on its public URL.
@@ -227,7 +228,7 @@ See [agno scheduler docs](https://docs.agno.com/agent-os/scheduler) for the cron
 
 ## Platform Manager
 
-The platform's ops surface is the Platform Manager agent ([`agents/platform_manager.py`](agents/platform_manager.py)) — read-only by design. It combines the codebase context provider (how the platform is wired) with runtime tools over Postgres (eval history, deployment-check reports — plus running the deployment check on demand when none exists — schedules, runtime-built components), diagnoses issues across both lenses, and hands off fixes: code changes go to coding agents via the skills in [`.agents/skills/`](.agents/skills/), component changes go to Agent Builder.
+The platform's ops surface is the Platform Manager agent ([`agents/platform_manager.py`](agents/platform_manager.py)) — read-only by design. It combines the codebase context provider (how the platform is wired) with runtime tools over Postgres (eval history, deployment-check reports — plus running the deployment check on demand when no report exists or the latest is stale — schedules, runtime-built components), diagnoses issues across both lenses, and hands off fixes: code changes go to coding agents via the skills in [`.agents/skills/`](.agents/skills/), component changes go to Agent Builder.
 
 Keep it read-only. Least privilege is the point: an ops surface that only reads can't misfire, needs no confirmation gates, and stays safe to expose from any frontend. **Diagnostics are the one sanctioned trigger**: Platform Manager may run observations that are deterministic, free, idempotent, and non-mutating — `run_deployment_check` qualifies (it re-points the same checks the daily cron runs, and the run persists so report history stays coherent); run-evals does not (model spend), and anything that writes platform state never does. Future read tools (trace summaries, `git diff` inspection) belong here; mutations belong with coding agents through git, or behind Agent Builder's delete gate — which an MCP client can now approve in-chat via `continue_run`.
 

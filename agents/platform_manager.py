@@ -4,6 +4,7 @@ Platform Manager Agent
 """
 
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, cast
 
@@ -26,6 +27,13 @@ codebase_context = WorkspaceContextProvider(
 _db = get_postgres_db()
 
 
+def _iso(timestamp: Any) -> Any:
+    """Epoch seconds → ISO 8601 UTC; anything else passes through untouched."""
+    if isinstance(timestamp, (int, float)):
+        return datetime.fromtimestamp(timestamp, tz=timezone.utc).isoformat()
+    return timestamp
+
+
 def _eval_status(eval_data: Any) -> str | None:
     """Compact PASS/FAIL from an eval run's stored payload."""
     if not isinstance(eval_data, dict):
@@ -36,7 +44,22 @@ def _eval_status(eval_data: Any) -> str | None:
         if verdicts:
             return "PASS" if all(verdicts) else "FAIL"
     status = eval_data.get("eval_status")
-    return str(status) if status else None
+    # Reliability evals store PASSED/FAILED; normalize to the judge branch's vocabulary.
+    return {"PASSED": "PASS", "FAILED": "FAIL"}.get(str(status), str(status)) if status else None
+
+
+def _fail_reason(eval_data: Any) -> str | None:
+    """The judge's written reason (or reliability's missed-tool info) for a failed run."""
+    if not isinstance(eval_data, dict):
+        return None
+    results = eval_data.get("results")
+    if isinstance(results, list):
+        for item in results:
+            if isinstance(item, dict) and not item.get("passed", True):
+                reason = item.get("reason") or item.get("failed_tool_calls")
+                if reason:
+                    return str(reason)[:200]
+    return None
 
 
 def get_eval_history(limit: int = 20) -> str:
@@ -50,21 +73,35 @@ def get_eval_history(limit: int = 20) -> str:
         tuple[list[dict[str, Any]], int],
         _db.get_eval_runs(limit=limit, sort_by="created_at", sort_order="desc", deserialize=False),
     )
-    rows = [
-        {
+    rows = []
+    for run in runs:
+        status = _eval_status(run.get("eval_data"))
+        row: dict[str, Any] = {
             "name": run.get("name"),
             "component": run.get("evaluated_component_name") or run.get("agent_id") or run.get("workflow_id"),
             "eval_type": run.get("eval_type"),
-            "status": _eval_status(run.get("eval_data")),
-            "created_at": run.get("created_at"),
+            "status": status,
+            "created_at": _iso(run.get("created_at")),
         }
-        for run in runs
-    ]
+        if status == "FAIL":
+            row["reason"] = _fail_reason(run.get("eval_data"))
+        rows.append(row)
+    if not rows:
+        return json.dumps(
+            {
+                "total": 0,
+                "runs": [],
+                "note": "No eval runs recorded yet — expected on a fresh platform, since the "
+                "run-evals schedule ships disabled. Run `python -m evals --tag smoke` from a "
+                "coding agent, or enable the run-evals schedule from the AgentOS UI.",
+            }
+        )
     return json.dumps({"total": total, "runs": rows}, default=str)
 
 
 def get_deployment_check_report(limit: int = 3) -> str:
-    """The latest deployment-check reports: readiness of DB, auth, scheduler URL, Slack, and components.
+    """The latest deployment-check reports: readiness of DB, auth, scheduler URL, MCP
+    reachability, Slack, schedule state, and component imports.
 
     Args:
         limit: Maximum number of past workflow runs to return, newest first.
@@ -96,27 +133,44 @@ def get_deployment_check_report(limit: int = 3) -> str:
         return json.dumps(
             {
                 "reports": [],
-                "note": "No deployment-check runs recorded yet. It can be run on demand: "
-                "POST /workflows/deployment-check/runs",
+                "note": "No deployment-check runs recorded yet. Call run_deployment_check to "
+                "produce one now (humans can POST /workflows/deployment-check/runs).",
             }
         )
+    reports.sort(key=lambda report: report["created_at"] or 0, reverse=True)
+    for report in reports:
+        report["created_at"] = _iso(report["created_at"])
     return json.dumps({"reports": reports[:limit]}, default=str)
 
 
 def list_schedules(limit: int = 100) -> str:
-    """Registered cron schedules with cadence, endpoint, enabled state, and next run time.
+    """Registered cron schedules with cadence, endpoint, enabled state, next run time,
+    and each schedule's most recent trigger outcome (status, error) — so a schedule that
+    fires but fails is visible, not just one that is due.
 
     Args:
         limit: Maximum number of schedules to return.
     """
     schedules, total = _db.get_schedules(limit=limit)
-    rows = [
-        {
+    rows = []
+    for schedule in schedules:
+        row = {
             key: schedule.get(key)
-            for key in ("id", "name", "cron_expr", "timezone", "endpoint", "enabled", "next_run_at")
+            for key in ("id", "name", "cron_expr", "timezone", "endpoint", "enabled", "description")
         }
-        for schedule in schedules
-    ]
+        row["next_run_at"] = _iso(schedule.get("next_run_at"))
+        schedule_runs = _db.get_schedule_runs(str(schedule.get("id")), limit=1)
+        runs_list = schedule_runs[0] if isinstance(schedule_runs, tuple) else schedule_runs
+        if runs_list:
+            last = runs_list[0]
+            last_run = last if isinstance(last, dict) else last.to_dict()
+            row["last_run"] = {
+                "status": last_run.get("status"),
+                "status_code": last_run.get("status_code"),
+                "error": last_run.get("error"),
+                "completed_at": _iso(last_run.get("completed_at")),
+            }
+        rows.append(row)
     return json.dumps({"total": total, "schedules": rows}, default=str)
 
 
@@ -143,10 +197,12 @@ def list_platform_components(limit: int = 50) -> str:
         limit: Maximum number of components to return.
     """
     components, total = _db.list_components(limit=limit)
-    rows = [
-        {key: component.get(key) for key in ("component_id", "component_type", "name", "current_version", "created_at")}
-        for component in components
-    ]
+    rows = []
+    for component in components:
+        row = {key: component.get(key) for key in ("component_id", "component_type", "name", "current_version")}
+        row["created_at"] = _iso(component.get("created_at"))
+        row["updated_at"] = _iso(component.get("updated_at"))
+        rows.append(row)
     return json.dumps({"total": total, "components": rows}, default=str)
 
 
@@ -157,10 +213,16 @@ recommend what to do next. You are read-only: never claim to change code, compon
 You have two lenses; pick by question, combine them when diagnosing:
 - `query_my_codebase` — how the platform is wired: agents, workflows, registry, schedules,
   env vars, skills. Be specific and grounded; quote real file paths and line numbers.
-- Runtime tools — how it is doing: `get_eval_history` (eval PASS/FAIL over time),
-  `get_deployment_check_report` (readiness of DB, auth, scheduler, Slack, components),
-  `run_deployment_check` (fresh readiness report on demand), `list_schedules` (crons and
-  next runs), `list_platform_components` (components built at runtime by Agent Builder).
+- Runtime tools — how it is doing: `get_eval_history` (eval PASS/FAIL over time, with the
+  judge's reason on failures), `get_deployment_check_report` (readiness of DB, auth,
+  scheduler URL, MCP reachability, Slack, schedule state, component imports),
+  `run_deployment_check` (fresh readiness report on demand), `list_schedules` (crons,
+  next runs, and each schedule's last trigger outcome), `list_platform_components`
+  (components built at runtime by Agent Builder).
+
+The run-evals schedule ships disabled by design — it spends model calls — so
+`enabled=false` on it is not a fault: enabling it is a UI action (or
+POST /schedules/{id}/enable), never a code change.
 
 Diagnostics are within your read-only mandate: `run_deployment_check` is deterministic,
 free, and non-mutating — when no deployment-check report exists or the latest looks stale,
@@ -170,12 +232,14 @@ For broad questions about the platform — which agents, workflows, schedules, o
 ships and how to use it — ask the workspace for `AGENTS.md` (the repo's source-of-truth
 overview) and answer from it, reading other files only for specifics it doesn't cover. When
 onboarding someone, keep the tour compact — a handful of sections, not a handbook: open with
-the coding-agent skills lifecycle in `.agents/skills/` (all five skills by name), then Agent
-Builder creating agents, teams, and workflows from the AgentOS UI, Slack, or any MCP frontend
-via the safe Studio registry, then a few concrete first prompts or commands to try — and touch
-the platform basics in a line each: the registered agents, Postgres persistence (sessions,
-memory, knowledge), the scheduler with its deployment-check, and the Slack and JWT gates. Skip
-exhaustive file-by-file or endpoint-by-endpoint detail unless asked.
+the coding-agent skills in `.agents/skills/`, each by name, framed as the arc they form
+(build → iterate → eval → deploy), then Agent Builder creating agents, teams, and workflows
+from the AgentOS UI, Slack, or any MCP frontend via the safe Studio registry, then a few
+concrete first prompts or commands to try — and touch the platform basics in a line each: the
+registered agents, Postgres persistence (sessions, memory, knowledge), the scheduler with its
+deployment-check, the MCP endpoint at `/mcp` (claude.ai, ChatGPT, Claude Code, and Cursor
+connect there), and the Slack and JWT gates. Skip exhaustive file-by-file or
+endpoint-by-endpoint detail unless asked.
 
 When something the user asks about does not exist in the platform — a function, file, agent,
 or table — say so plainly and stop. Do not enumerate incidental text mentions of the name
@@ -184,8 +248,10 @@ appears.
 
 When something looks wrong, diagnose the likely cause across both lenses, then hand off:
 code or prompt fixes go to a coding agent (name the matching skill — /eval-and-improve for
-failing evals, /extend-agent or /improve-agent for agent behavior); new or changed components
-go to Agent Builder; anything else, state the exact command or action for the human to take.
+failing evals, /extend-agent or /improve-agent for agent behavior, /deploy-platform for
+production and deploy-layer issues, /review-and-improve when docs and code disagree); new or
+changed components go to Agent Builder; anything else, state the exact command or action for
+the human to take.
 
 If a request is off-topic — not answerable from the platform's files or runtime data,
 including creative writing and general tech trivia unrelated to this platform — say so
