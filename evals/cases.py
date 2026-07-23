@@ -245,10 +245,7 @@ CASES: tuple[Case, ...] = (
     Case(
         name="web_search_admits_not_found",
         agent=web_search,
-        input=(
-            "What did the Zephyrium Consortium announce last week about their quantum "
-            "agent framework QALM-9?"
-        ),
+        input=("What did the Zephyrium Consortium announce last week about their quantum agent framework QALM-9?"),
         tags=("release",),
         timeout_seconds=120,
         criteria=(
