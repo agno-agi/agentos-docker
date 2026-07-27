@@ -53,7 +53,7 @@ Build what makes *their* week easier. Resist the demo classics (news digest, gen
 
 | Decision | How you decide it |
 |---|---|
-| **Pattern** | **Direct tools** (mirror [`agents/web_search.py`](../../../agents/web_search.py)) when the agent uses ≤2 toolkits — this is the common case. **Context provider** (mirror the `codebase_context` wiring in [`agents/platform_manager.py`](../../../agents/platform_manager.py)) when it queries one information source through a single `query_<thing>` tool, or you're hiding a sub-agent. Pick one and mention it in a clause; never make the user choose. |
+| **Pattern** | **Direct tools** (the required structure in Step 3; [`agents/chief.py`](../../../agents/chief.py) shows it live — ignore its `learning=` extras) when the agent uses ≤2 toolkits — this is the common case. **Context provider** (mirror the `codebase_context` wiring in [`agents/platform_manager.py`](../../../agents/platform_manager.py)) when it queries one information source through a single `query_<thing>` tool, or you're hiding a sub-agent. Pick one and mention it in a clause; never make the user choose. |
 | **Slug** | Derive it from the purpose (`pr-reviewer`, `linear-triager`). Kebab-case. State it, don't ask for sign-off. |
 | **Model** | `default_model()` — already `gpt-5.6-sol`. Override only if the user asks. |
 | **Toolkits** | Choose from what the discovery answers imply, grounded in agno docs (Step 2). Prefer keyless toolkits (HackerNews, ArXiv, Wikipedia, DuckDuckGo via `WebSearchTools`) when they'd serve just as well — a keyless agent works on the first try. |
@@ -90,7 +90,7 @@ Don't guess any of the four. Skip this step entirely if the agent is chat-only w
 
 Create `agents/<slug>.py` (replacing `-` with `_` for the filename: `agents/linear_agent.py`). Follow the closest reference pattern:
 
-- **Direct tools** → mirror [`agents/web_search.py`](../../../agents/web_search.py).
+- **Direct tools** → follow the required structure below ([`agents/chief.py`](../../../agents/chief.py) is the live example; skip its `learning=` and notes wiring unless the new agent needs durable state across sessions).
 - **Context provider** → mirror the `codebase_context` part of [`agents/platform_manager.py`](../../../agents/platform_manager.py): build the `WorkspaceContextProvider`, unpack `*provider.get_tools()` into `tools=`, and append `provider.instructions()` to the agent's instructions. Skip its extra runtime tools unless the new agent also needs direct tools.
 - **Studio builder** → mirror [`agents/agent_builder.py`](../../../agents/agent_builder.py) when the agent should create or refine AgentOS components through StudioTools.
 
@@ -119,7 +119,6 @@ it should follow when answering>
     db=get_postgres_db(),
     tools=[...],                     # or context_provider.get_tools()
     instructions=INSTRUCTIONS,
-    enable_agentic_memory=True,
     add_datetime_to_context=True,
     add_history_to_context=True,
     num_history_runs=5,
@@ -142,7 +141,7 @@ from agents.<slug_underscore> import <slug_underscore>
 
 agent_os = AgentOS(
     ...
-    agents=[agent_builder, platform_manager, web_search, <slug_underscore>],
+    agents=[chief, agent_builder, platform_manager, <slug_underscore>],
     ...
 )
 ```

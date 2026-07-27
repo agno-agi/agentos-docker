@@ -66,15 +66,32 @@ This table is a hard checkpoint: it gets written before anything from Step 7 hap
 
 ## 7. Build their first agent
 
-Now the fun part — roll straight in. In the same message, directly below the connection table and its one line of direction, say let's build your first agent (they can always run `/create-agent` later for more), and start [`create-agent`](../create-agent/SKILL.md): if they've hinted at an idea anywhere in the session, propose it; otherwise end with that skill's discovery question — deliver it yourself in this message, picking up create-agent's own steps once they answer — and, unlike a bare `/create-agent` run, offer a few example handoffs alongside it so a brand-new user has somewhere to start. Keep it plain text — no structured choice control here, even though create-agent's own instructions offer one: a tool-call picker breaks the flow of the message, and typing a few words is easier than a menu. (The override is for this kickoff message only — once they answer, that skill's guidance applies as written.) The examples are bullets in the message, e.g.:
+Now the fun part — roll straight in. In the same message, directly below the connection table and its one line of direction, say let's build your first agent (they can always run `/create-agent` later for more), and start [`create-agent`](../create-agent/SKILL.md): if they've hinted at an idea anywhere in the session, propose that; otherwise offer **one** recommendation, carrying that skill's discovery question as its fallback — a brand-new user needs somewhere to start, and one concrete idea is easier to answer than a menu. Keep it plain text — no structured choice control here, even though create-agent's own instructions offer one: a tool-call picker breaks the flow of the message, and typing a few words is easier than picking. (The override is for this kickoff message only — once they answer, that skill's guidance applies as written.) The recommendation goes in the message like this:
 
-- watch arXiv + Hacker News for work relevant to what I'm building
-- triage my repo's new issues into fix-now / later / close
-- turn merged PRs into release notes
-- research technical topics
-- draft my weekly team or investor update
+> Here's the one I'd build for you: **Radar**: a quick brief on what the AI labs and agent frameworks shipped. Five items max, one line each, every one with a link, no hype. It keeps a ledger of what it's already sent you, so every brief is only what's new — and it learns what you care about, so "stop showing me funding rounds" sticks.
+>
+> Or something from your own week instead — issue triage, release notes, your weekly update. Say it in your own words and I'll build that.
 
-The options are calibration, not a menu — whatever they type is their first discovery answer, create-agent's follow-up dig still applies when the answer leaves the design open (a complete brief builds immediately, per that skill), and their own words always beat an option. Your live-and-connect message runs platform-up (MCP answer quoted) → connection table → connect direction → build kickoff, and closes with the first build move — the discovery question, or your build proposal if they've already hinted at an idea — never with "ready?" or "connected yet?".
+The recommendation is calibration, not a menu — whatever they type is their first discovery answer, create-agent's follow-up dig still applies when the answer leaves the design open (a complete brief builds immediately, per that skill), and their own words always beat Radar. Your live-and-connect message runs platform-up (MCP answer quoted) → connection table → connect direction → build kickoff, and closes with the first build move — the recommendation, or your build proposal if they've already hinted at an idea — never with "ready?" or "connected yet?".
+
+### The Radar brief
+
+If they take it, this is what you hand create-agent — a spec for you, never pasted to the user. It's a complete brief, so that skill builds immediately without asking anything.
+
+- **Radar** (`radar`), direct-tools pattern, keyless `WebSearchTools` so a fresh clone with only `OPENAI_API_KEY` builds on the first try. Searches the web for what the major AI labs and agent frameworks released or announced.
+- Max 5 items, one line each, every item with a source link. No hype adjectives — what happened, not how exciting it is.
+- **The delta comes from a ledger, not a clock.** Two plain functions over an agent `FileSystem`: one checks whether items were already reported, one records them. Whatever isn't in the ledger is the brief. No schedule, no `last_run` timestamp.
+- Nothing new is one line that says since when ("nothing new since Tuesday"). Never pad the brief.
+- **Two answer modes.** "What's new?" → the delta-filtered brief. "What's going on with X?" → answer it from search, no suppression; recording happens either way. The ledger filters the brief, never a direct question — otherwise a real question gets a "nothing new" that is technically true and useless.
+- Preferences live in a file it reads every run, so a standing rule binds on any run from any surface, and the user can open and edit it.
+
+Three things the code has to get right:
+
+- **`enable_agentic_memory=False`** — against the default in create-agent's required structure, with the reason in a comment. Radar's state has to be readable by runs that carry no user id, and the ledger needs exact membership rather than semantic recall; agentic memory would also become a second home for preferences that already live in the file.
+- **The ledger gets its own directory, and its lines are bare keys.** `contains()` is whole-line exact match scoped to a directory, not a file — so `reported/log.md` holds one canonical URL per line and nothing else. A title or date on that line breaks the match, and sharing a directory with the preferences file makes membership checks collide with unrelated lines.
+- **Each brief is filed as its own note** (`briefs/<date>.md`). That's where "nothing new since Tuesday" comes from — `list()` over that directory — and it gives "show me last week's briefs" for free, without the delta ever depending on a timestamp.
+
+Wire it the way [`agents/chief.py`](../../../agents/chief.py) does: `FileSystem(get_postgres_db(), namespace="radar")`, then `tools=[fs.tools(), WebSearchTools(), was_reported, record_reported]`. The file tools are what let it manage the preferences file and the brief notes; the instructions say the ledger is only ever touched through the two functions.
 
 Then follow the skill through its smoke test: work out what to build, generate the agent, register it, and prove it live. Show the user their agent's first answer — and tell them that if they connected the UI, a **Refresh** puts their agent in the Agents list next to the built-in ones. Then come back here: stop before that skill's own closing and let Step 8 replace it, so the handover lands once.
 

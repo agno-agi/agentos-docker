@@ -1,11 +1,11 @@
 # AgentOS: FastAPI for Agents
 
-AgentOS turns your agents into a production API. One AI backend that serves every frontend.
+AgentOS turns your agents into a production API and MCP server. One AI backend that serves every frontend.
 
 1. **Your product.** Call the REST API from your app: run agents, stream responses, and manage sessions, memory, and knowledge.
-2. **AgentOS UI.** Chat with agents, build new ones, and inspect sessions, traces, memory, and evals from the AgentOS UI at [os.agno.com](https://os.agno.com?utm_source=github&utm_medium=example-repo&utm_campaign=agentos-docker&utm_content=agentos-docker&utm_term=docker).
-3. **Coding agents.** Manage the full agent development lifecycle (create, extend, improve, eval, review — and deploy) using the skills in [`.agents/skills/`](.agents/skills/).
-4. **AI apps.** MCP clients like Claude and ChatGPT can use your agents through the MCP server at `/mcp`.
+2. **AgentOS UI.** Chat with agents, build new ones, inspect sessions, traces, memory, and evals from the AgentOS UI at [os.agno.com](https://os.agno.com?utm_source=github&utm_medium=example-repo&utm_campaign=agentos-docker&utm_content=agentos-docker&utm_term=docker).
+3. **Coding agents.** Manage the full agent development lifecycle (create, extend, improve, eval, review) using the skills in [`.agents/skills/`](.agents/skills/).
+4. **AI apps.** Use your agents from Claude and ChatGPT using the MCP server at `/mcp`.
 5. **Chat interfaces.** Chat with your agents from Slack, WhatsApp, Telegram, and Discord.
 
 <img width="3298" height="2412" alt="AgentOS" src="https://github.com/user-attachments/assets/40a53a42-d4d2-402b-8e92-742609207957" />
@@ -28,7 +28,8 @@ Your coding agent drives the whole flow: it checks Docker, sets up `.env`, boots
 
 This codebase comes with:
 
-- **Two platform agents** that help you build and run the platform from your favorite AI apps like Claude and ChatGPT. **Agent Builder** creates agents, teams, and workflows using the AgentOS Studio. **Platform Manager** monitors and manages the platform: codebase questions, eval history, deployment checks, schedules.
+- **Chief, your team's mascot.** "Chief, we're going with PlanetScale over RDS." "Chief, zak ran a good launch." Tell it anything — decisions, who's on what, what you learned — and it files the who and the why, learns how you work, and connects the dots when someone asks what's happening. Every frontend talks to the same Chief: what you tell it in Slack is there when you ask from claude.ai or ChatGPT.
+- **Two platform agents** that help you build and run the platform from your favorite AI apps like Claude and ChatGPT. **Agent Builder** creates agents, teams, and workflows using the AgentOS Studio. **Platform Manager** understands, monitors, and explains the platform: codebase questions, eval history, deployment checks, schedules.
 - **Coding-agent skills** let Claude Code, Codex, Cursor, and other coding agents build, test, and improve the platform automatically — see [Using the platform](#using-the-platform).
 
 Trace data, agent code, evals, and system logs are all available to coding agents, so the platform can inspect and improve itself end to end.
@@ -67,6 +68,10 @@ Confirm your AgentOS is running at [http://localhost:8000/docs](http://localhost
 ### Step 4: Check platform health
 
 Click **Chat** under **Platform Manager** and ask: "How healthy is the platform?" It answers from the codebase and runtime data — eval history, deployment checks, schedules, and the component you just built.
+
+### Step 5: Meet Chief
+
+Click **Chat** under **Chief** and tell it what you're working on: "Hey Chief — I'm building a support bot." It files the who and what as entities, the why as notes, and what it learns about you stays yours. From then on, tag it in from anywhere — this UI, Slack, claude.ai, ChatGPT — and ask "Chief, what's happening?": same thread everywhere.
 
 ## Run in production
 
@@ -194,7 +199,7 @@ It asks a few questions, generates the agent file in `agents/`, registers it in 
 Improve your agents by running the following skills:
 
 - **`/extend-agent`** — Add a tool, add a capability, refine the instructions, fix a known bug.
-- **`/improve-agent`** — Claude simulates scenarios from the agent's `INSTRUCTIONS`, runs them against the live container, judges the responses, and edits until they pass.
+- **`/improve-agent`** — Claude simulates scenarios from the agent's `INSTRUCTIONS` and its real usage recorded in the database, runs them against the live container, judges the responses, and edits until they pass.
 
 ### Evaluate
 
@@ -250,7 +255,7 @@ can you access my agentos mcp?
 | `EVALS_TAG` | no | `smoke` | Eval tag run by the run-evals workflow. |
 | `EVALS_CASE_TIMEOUT_SECONDS` | no | `90` | Default per-case timeout for run-evals runs; applies only to cases that don't set their own `timeout_seconds`. |
 | `EVALS_SUITE_TIMEOUT_SECONDS` | no | `900` | Whole-suite timeout for run-evals runs; per-case timeouts are the granular limit. The default bounds the `smoke` tag's worst case (incl. builder-case teardown). |
-| `PARALLEL_API_KEY` | no | none | Authenticates the WebSearch Agent's Parallel SDK / MCP connection. |
+| `PARALLEL_API_KEY` | no | none | Authenticates Chief's and the Studio registry's web search tools (Parallel SDK when set; keyless MCP fallback). |
 | `SLACK_BOT_TOKEN` / `SLACK_SIGNING_SECRET` | no | none | Both must be set to enable the Slack interface. |
 | `DB_HOST` / `DB_PORT` / `DB_USER` / `DB_PASS` / `DB_DATABASE` | no | matches compose | Postgres connection. |
 | `DB_DRIVER` | no | `postgresql+psycopg` | SQLAlchemy driver. |

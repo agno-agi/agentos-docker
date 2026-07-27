@@ -19,7 +19,7 @@ If the user named one, that's the pick. Otherwise compare `agents/` against the 
 
 ## 2. Map what it promises
 
-Read the agent's file. Its `INSTRUCTIONS` are a list of testable claims — every "always cite", "never fabricate", "use X for Y" is a case waiting to be written. Note the tools (reliability assertions), the model, and the pattern. One check has teeth: **is this a studio-builder?** Detect it operationally — `StudioTools` in the agent's `tools=` with any of `create_*`/`edit_*`/`publish_*` missing from `requires_confirmation_tools` — and look transitively too: a team member, workflow step, or sub-agent that wires in StudioTools counts. Builder cases write real DB rows, so they carry the snapshot hooks (shown in Step 5), no exceptions; when in doubt, add the hooks anyway — they're free on a run that creates nothing.
+Read the agent's file. Its `INSTRUCTIONS` are a list of testable claims — every "always cite", "never fabricate", "use X for Y" is a case waiting to be written. Note the tools (reliability assertions), the model, and the pattern. One check has teeth: **is this a studio-builder?** Detect it operationally — `StudioTools` in the agent's `tools=` with any of `create_*`/`edit_*`/`publish_*` missing from `requires_confirmation_tools` — and look transitively too: a team member, workflow step, or sub-agent that wires in StudioTools counts. Builder cases write real DB rows, so they carry the snapshot hooks (shown in Step 5), no exceptions; when in doubt, add the hooks anyway — they're free on a run that creates nothing. A second check: does the agent carry **learning stores** (`learning=` on the Agent — all three reference agents do)? Those cases take the learning hooks; the builder hooks already include them.
 
 ## 3. Mine the platform
 
@@ -34,7 +34,7 @@ asks = [run["input"]["input_content"] for s in sessions for run in (s.get("runs"
 evals, _ = db.get_eval_runs(limit=20, deserialize=False)   # what's already covered, what's flaky
 ```
 
-Real session inputs make the best case inputs — they're what the agent will face again. Two rules: **a recorded answer is a scenario, never a golden answer** (the agent may have been wrong that day; the rubric states what a correct answer looks like, not what yesterday's said — and keep only the timeless shape of correctness: versions, dates, counts, and today's news enter the rubric as "a current X with a source", never as the value itself), and a fresh platform with no sessions is fine — derive scenarios from `INSTRUCTIONS` instead, the way improve-agent derives probes.
+Real session inputs make the best case inputs — they're what the agent will face again. Two rules: **a recorded answer is a scenario, never a golden answer** (the agent may have been wrong that day; the rubric states what a correct answer looks like, not what yesterday's said — and keep only the timeless shape of correctness: versions, dates, counts, and today's news enter the rubric as "a current X with a source", never as the value itself), and a fresh platform with no sessions is fine — derive scenarios from `INSTRUCTIONS` instead, the same fallback improve-agent's probes use.
 
 ## 4. Propose what to test
 
@@ -54,12 +54,15 @@ Case(
     criteria="<what a correct answer contains — specific, falsifiable>",
     expected_tool_calls=("<tool>",),
     # Studio-builder agent (Step 2)? These two lines are mandatory — both live in this file:
-    # setup=snapshot_component_ids,
-    # teardown=cleanup_new_components,
+    # setup=snapshot_builder_state,
+    # teardown=cleanup_new_builder_state,
+    # Not a builder, but carries learning stores (`learning=` — chief, platform-manager)?
+    # setup=snapshot_learning_state,
+    # teardown=cleanup_new_learning_state,
 )
 ```
 
-The judge and the reliability check answer different questions — **pair them whenever the capability involves a tool**. A rubric alone is gameable: an agent that answers from stale memory without searching can read *correct*; `expected_tool_calls` proves the work happened, the rubric proves the answer used it. (If a tool's name depends on env — keyed SDK vs keyless fallback — mirror the file's existing conditional, like `_WEB_SEARCH_TOOL`.) Write criteria falsifiable ("cites at least one real URL from the fetched page"), not vibes ("gives a good answer") — and ask of every rubric: **could a stock model with no tools and none of this agent's instructions pass it?** If yes, the case tests nothing; tie the criteria to what only fresh tool output or this agent's `INSTRUCTIONS` can supply (for chat-only agents: scope, refusals, format, the rules they were given). Tags by cost and determinism: `smoke` for fast, deterministic checks — these ride the run-evals schedule; `release` for broader pre-release confidence; `live` when correctness depends on today's web. If the right answer can change with the outside world, the case is `live` — and live never shares a tag with smoke.
+The judge and the reliability check answer different questions — **pair them whenever the capability involves a tool**. A rubric alone is gameable: an agent that answers from stale memory without searching can read *correct*; `expected_tool_calls` proves the work happened, the rubric proves the answer used it. (If a tool's name depends on env — keyed SDK vs keyless fallback — mirror the file's existing conditional, like `_WEB_TOOL`.) Write criteria falsifiable ("cites at least one real URL from the fetched page"), not vibes ("gives a good answer") — and ask of every rubric: **could a stock model with no tools and none of this agent's instructions pass it?** If yes, the case tests nothing; tie the criteria to what only fresh tool output or this agent's `INSTRUCTIONS` can supply (for chat-only agents: scope, refusals, format, the rules they were given). Tags by cost and determinism: `smoke` for fast, deterministic checks — these ride the run-evals schedule; `release` for broader pre-release confidence; `live` when correctness depends on today's web. If the right answer can change with the outside world, the case is `live` — and live never shares a tag with smoke.
 
 Two containment rules: studio-builder cases get the snapshot hooks, every time — that's also why build prompts that are unsafe as ad-hoc smoke tests are safe here. And any other tool that mutates external state (messages, files, third-party APIs) needs its own containment — a scoped test target, a teardown, or don't write the case.
 

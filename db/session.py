@@ -7,7 +7,7 @@ PostgreSQL connection helpers. Use:
 - create_knowledge() for agent knowledge backed by PgVector.
 """
 
-from functools import lru_cache
+from functools import cache
 
 from agno.db.postgres import PostgresDb
 from agno.knowledge import Knowledge
@@ -19,7 +19,7 @@ from db.url import db_url
 DB_ID = "agentos-db"
 
 
-@lru_cache(maxsize=None)
+@cache
 def get_postgres_db(contents_table: str | None = None) -> PostgresDb:
     """Returns the shared PostgresDb instance for the AgentOS.
 

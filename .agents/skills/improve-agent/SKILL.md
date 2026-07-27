@@ -1,13 +1,13 @@
 ---
 name: improve-agent
-description: Autonomous hardening loop for an existing agent — derive probes from the agent's INSTRUCTIONS, run them against the live container, judge responses, edit the agent file, and re-probe until it reliably does what its instructions say. No user input needed. Use to harden an agent against its stated intent; to make a concrete change instead, use extend-agent.
+description: Autonomous hardening loop for an existing agent — derive probes from the agent's INSTRUCTIONS and from its real usage recorded in the database, run them against the live container, judge responses, edit the agent file, and re-probe until it reliably does what its instructions say. No user input needed. Use to harden an agent against its stated intent; to make a concrete change instead, use extend-agent.
 ---
 
 # Improve an Agent
 
 > _**Coding-agent workflow** — a `/slash-command` your coding agent (Claude Code, Codex, others) runs while developing this repo. Invoke it by name (e.g. `/improve-agent`) or describe the task and it triggers automatically._
 
-You are recursively improving a target agent **autonomously**. **No user-supplied test cases** — you derive your own probes from the agent's stated purpose (its `INSTRUCTIONS`), test the agent against them, judge the results, and iterate on `agents/<slug>.py` until the agent reliably does what its instructions say it does.
+You are recursively improving a target agent **autonomously**. **No user-supplied test cases** — you derive your own probes from the agent's stated purpose (its `INSTRUCTIONS`) and from its recorded usage (real sessions in the database, when the platform has any), test the agent against them, judge the results, and iterate on `agents/<slug>.py` until the agent reliably does what its instructions say it does. The usage half is what makes this loop **reflective self-improvement**: reflect on how the agent is actually used, then improve it accordingly.
 
 This is the autonomous half of the iteration loop. The user-driven half lives in [`extend-agent`](../extend-agent/SKILL.md) (add a tool, add a capability, refine the prompt, fix a specific bug). Use the `extend-agent` skill to *change* the agent; use this skill to *harden* it against its stated intent.
 
@@ -25,7 +25,7 @@ This is a **single-pass** loop. One pass usually takes 15-30 minutes depending o
   ```
 
   Empty result = the container's `/app` is bound to a different repo path. Either `cd` to that repo or restart the container from this directory (`docker compose down && docker compose up -d --build`).
-- Ask the user for the target agent **slug** (e.g. `web-search`).
+- Ask the user for the target agent **slug** (e.g. `chief`).
 - Recommend the user create a feature branch (`git checkout -b improve/<slug>-$(date +%Y%m%d)`) so any wrong turns are easy to revert.
 
 ## 1. Read the agent's intent
@@ -40,7 +40,22 @@ Restate the agent's purpose to the user in 1-2 sentences before generating probe
 
 ## 2. Derive probes
 
-Generate enough probes to meaningfully exercise the agent's stated capabilities — aim for **2-3 per distinct rule in `INSTRUCTIONS`, plus 2 adversarial probes**. Most agents in this repo land at 8-12. Cover four categories:
+Probes come from two sources: what the agent *promises* (`INSTRUCTIONS`) and what it actually *faces* (recorded usage). Mine the record first — a real ask is the strongest probe there is, because it will come back.
+
+**Mine usage.** The platform records how the agent actually gets used — the same read [`create-evals`](../create-evals/SKILL.md) uses for scenarios (needs the repo venv: `source .venv/bin/activate`; the compose defaults reach the local DB):
+
+```python
+from db import get_postgres_db
+db = get_postgres_db()
+# deserialize=False keeps the (rows, total) tuple shape and returns plain dicts
+sessions, _ = db.get_sessions(component_id="<slug>", limit=20, deserialize=False)
+asks = [run["input"]["input_content"] for s in sessions for run in (s.get("runs") or []) if run.get("input")]
+evals, _ = db.get_eval_runs(agent_id="<slug>", limit=20, deserialize=False)   # eval history — a recently failed case is a probe with its expected behavior already written
+```
+
+Skim the asks for three things: **recurring shapes** (the golden path as users actually phrase it), **visible fumbles** (read the run's output where something looks off — wrong tool, fabrication, wrong format; a recorded response is a *scenario*, never the oracle — the agent may have been wrong that day, and expected behavior still comes from `INSTRUCTIONS`), and **out-of-scope asks** (users requesting things `INSTRUCTIONS` never promised — probe how gracefully the agent declines today, and surface the gap in Step 8; it may be `extend-agent`'s next feature). Reword private content before it becomes a probe — real names, real decisions — because probes run against the live agent, and a learning agent like `chief` files what it's told. A fresh platform with no sessions is fine: instruction-derived probes are the floor, mining only adds.
+
+**Derive from `INSTRUCTIONS`.** Generate enough probes to meaningfully exercise the agent's stated capabilities — aim for **2-3 per distinct rule in `INSTRUCTIONS`, plus 1-2 adversarial probes**, folding mined asks into the categories they fit. Most agents in this repo land at 8-12. Cover four categories:
 
 - **Golden path** (3-5): typical, in-scope questions the agent should handle well.
 - **Edge cases** (2-3): ambiguous, out-of-scope, or boundary questions. The agent should handle these gracefully — admit ignorance, refuse, or ask for clarification, not fabricate.
@@ -66,6 +81,28 @@ For each probe, write a one-line **expected behavior** describing what "good" lo
 > from evals.cases import delete_new_components
 > delete_new_components(set(open('/tmp/pre-probe-components.txt').read().split()))"
 > ```
+
+> **If the target carries learning stores (`chief`, `agent-builder`, `platform-manager`, or any agent wired with `learning=`): probes leave durable rows.** Capture is ungated — notes, entities, and memories written during a probe land in the same stores real teammates read back. Bracket the loop with the eval suite's learning snapshot pair — and for `agent-builder`, stack it with the component bracket above:
+>
+> ```bash
+> source .venv/bin/activate
+>
+> # once, before the first probe
+> python -c "
+> from dotenv import load_dotenv; load_dotenv()
+> import json
+> from evals.cases import snapshot_learning_state
+> print(json.dumps({k: sorted(v) for k, v in snapshot_learning_state().items()}))" > /tmp/pre-probe-learning.json
+>
+> # once, after the last probe — removes only the rows the probes created
+> python -c "
+> from dotenv import load_dotenv; load_dotenv()
+> import json
+> from evals.cases import delete_new_learning_state
+> delete_new_learning_state({k: set(v) for k, v in json.load(open('/tmp/pre-probe-learning.json')).items()})"
+> ```
+>
+> The diff removes rows the probes *created*; it cannot undo an edit *inside* a row that already existed — a probe that supersedes a real fact is unrecoverable. Two rules keep probes out of that path: give every probe fixture content no real team would have on file (distinctive invented names, projects, decisions — the eval suite's cases show the register), and never replay a mined ask verbatim — rewording it (the privacy rule above) is also what keeps it from colliding with the very row it came from.
 
 ## 3. Run the probes against the live agent
 
@@ -155,26 +192,27 @@ Summarize for the user:
 
 - N probes generated, M passed initially, K passed finally.
 - One line per accepted edit (which lever, what changed).
+- Out-of-scope asks surfaced by mining (Step 2) — real requests `INSTRUCTIONS` never promised; each is an [`extend-agent`](../extend-agent/SKILL.md) candidate.
 - `git diff agents/<slug>.py` (one short block).
 - Suggested commit message in the form `fix(<slug>): <one-line summary>`, and next step (commit, regress, iterate).
 
-For a regression check across the committed eval suite, see [`eval-and-improve`](../eval-and-improve/SKILL.md). And if a probe caught a real issue, don't let it evaporate — offer to graduate it into a committed case via [`create-evals`](../create-evals/SKILL.md), so the regression you just fixed stays fixed.
+For a regression check across the committed eval suite, see [`eval-and-improve`](../eval-and-improve/SKILL.md). And if a probe caught a real issue, don't let it evaporate — offer to graduate it into a committed case via [`create-evals`](../create-evals/SKILL.md), so the regression you just fixed stays fixed. Probes mined from real sessions are the strongest candidates: that ask has already happened once.
 
 ---
 
 ## A worked example
 
-Target: `web-search`. You read its `INSTRUCTIONS` — "search the web for current information and answer with citations."
+Target: `chief`. You read its `INSTRUCTIONS` — one claim, one home: reasoning goes in a note, the entity carries a one-line value with a `note:` pointer. Chief is a learning agent, so you bracket the loop with the learning snapshot pair from Step 2 and keep every probe on fixture content.
 
-You generate 10 probes. One: *"what changed in Anthropic's research this week?"* Expected: at least one `web_fetch` on a real source, cites a URL.
+You generate 10 probes. One: *"we picked Quillbase over Marrowstone because the ops burden was lower — keep this."* Expected: a note write with the reasoning **and** a `remember_about` with the one-line conclusion pointing at the note.
 
-You probe. Container logs show the agent called `web_search` once, got back stale snippets, stopped. Never called `web_fetch`. Vague answer, no citations. **FAIL.**
+You probe. Container logs show the agent called `remember_about` with the full rationale crammed into a fact, and never touched the notes. The "why" now lives where only one line should. **FAIL.**
 
-Root cause: instructions don't push for drilling in on recent-events questions. You add one rule:
+Root cause: the instructions state the rule but nothing marks rationale as the trigger. You add one clause:
 
-> *When the user asks about recent events or specific pages, follow up with at least one `web_fetch` to read the most relevant source before answering.*
+> *The word "because" is the tell: whatever follows it belongs in the note, never in the fact.*
 
-You restart `agentos-api`, then re-run the probe. Now the agent calls `web_search`, then `web_fetch`, answers with a real citation. **PASS.**
+You restart `agentos-api`, then re-run the probe. Now the agent appends the dated decision to `notes/`, files the one-line conclusion with `note=` set. **PASS.**
 
 You re-probe everything else. No regressions. Move on.
 

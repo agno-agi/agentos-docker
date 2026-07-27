@@ -15,7 +15,7 @@
 #
 #    Usage:
 #      ./scripts/mcp_check.sh                            # quick default probe
-#      ./scripts/mcp_check.sh "What does web-search do?" # your own question
+#      ./scripts/mcp_check.sh "What does chief do?"      # your own question
 #
 ############################################################################
 

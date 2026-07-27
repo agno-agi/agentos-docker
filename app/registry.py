@@ -12,8 +12,8 @@ from agno.tools.mcp import MCPTools
 from agno.tools.parallel import ParallelTools
 from agno.tools.reasoning import ReasoningTools
 
+from agents.chief import chief
 from agents.platform_manager import platform_manager
-from agents.web_search import web_search
 from app.settings import default_model
 from db import get_postgres_db
 
@@ -62,5 +62,5 @@ registry = Registry(
     models=[default_model()],
     dbs=[get_postgres_db()],
     functions=[route_component_type, score_eval_status],
-    agents=[web_search, platform_manager],
+    agents=[chief, platform_manager],
 )

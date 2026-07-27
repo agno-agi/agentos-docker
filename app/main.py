@@ -11,8 +11,8 @@ from agno.os import AgentOS
 from agno.utils.log import log_info
 
 from agents.agent_builder import agent_builder
+from agents.chief import chief
 from agents.platform_manager import platform_manager
-from agents.web_search import web_search
 from app.registry import registry
 from app.schedules import register_schedules
 from db import get_postgres_db
@@ -28,7 +28,7 @@ agentos_url = getenv("AGENTOS_URL", "http://127.0.0.1:8000")
 
 # ---------------------------------------------------------------------------
 # Interfaces
-# - The Agent Builder agent becomes available on Slack when both env vars are set
+# - Chief becomes available on Slack when both env vars are set
 # ---------------------------------------------------------------------------
 SLACK_BOT_TOKEN = getenv("SLACK_BOT_TOKEN", "")
 SLACK_SIGNING_SECRET = getenv("SLACK_SIGNING_SECRET", "")
@@ -39,11 +39,12 @@ if SLACK_BOT_TOKEN and SLACK_SIGNING_SECRET:
 
     interfaces.append(
         Slack(
-            agent=agent_builder,
+            agent=chief,
             streaming=True,
             token=SLACK_BOT_TOKEN,
             signing_secret=SLACK_SIGNING_SECRET,
             resolve_user_identity=True,
+            loading_text="Barbequeing...",
         )
     )
 
@@ -95,7 +96,7 @@ agent_os = AgentOS(
     mcp_auth=mcp_auth,
     lifespan=lifespan,
     db=get_postgres_db(),
-    agents=[agent_builder, platform_manager, web_search],
+    agents=[chief, agent_builder, platform_manager],
     workflows=[deployment_check, run_evals],
     interfaces=interfaces,
     registry=registry,

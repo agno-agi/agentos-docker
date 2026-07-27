@@ -136,14 +136,14 @@ def _check_slack_config() -> CheckResult:
 def _check_reference_components() -> CheckResult:
     try:
         from agents.agent_builder import agent_builder
+        from agents.chief import chief
         from agents.platform_manager import platform_manager
-        from agents.web_search import web_search
         from app.registry import registry
         from workflows.run_evals import run_evals
     except Exception as exc:
         return _fail("Components", f"Could not import reference components: {exc}")
 
-    agent_ids = sorted([agent_id for agent_id in (web_search.id, platform_manager.id, agent_builder.id) if agent_id])
+    agent_ids = sorted([agent_id for agent_id in (chief.id, platform_manager.id, agent_builder.id) if agent_id])
     workflow_ids = sorted([workflow_id for workflow_id in (deployment_check.id, run_evals.id) if workflow_id])
     return _pass(
         "Components",
