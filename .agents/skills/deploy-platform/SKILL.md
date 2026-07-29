@@ -51,7 +51,7 @@ Run the up script. It is built for this: every pause the script itself owns is T
 
 - First creates can be slow on some providers — twenty-plus minutes is normal; keep polling, don't declare failure early.
 - If the README names a browser step (e.g. applying a blueprint in the provider dashboard), relay those instructions first, then start the up script — its own poll absorbs the wait for the click.
-- When it finishes, read the live URL back from `AGENTOS_URL` in the env file — the script created the domain and persisted it there.
+- When it finishes, read the live URL back from `AGENTOS_URL` in the env file — the script created the domain and persisted it there. Its closing summary also carries the `MCP_CONNECT_SECRET` it generated (or loaded from the env file) — hold onto that value, Step 6 hands it to the user.
 - **A keyless first deploy refusing to start is by design, not failure:** with production auth on and no JWT key, the app exits at startup on purpose, so expect a crash-looping service. Tell the user this before they see it — the provider dashboard will show the deploy failing or restarting until the key lands in the next step; expected, deliberate, fixed by the key. Then check the provider logs yourself (the README names the command; bound the read with a lines/limit flag — streaming forms run forever) and confirm the startup error is the missing JWT key — any other error, fix it first.
 
 ## 4. The JWT key
@@ -101,7 +101,7 @@ Finish with what they own now:
 - code changes → `redeploy.sh`; config or secret changes → edit `.env.production`, then `env-sync.sh`
 - logs → the provider command from the README
 - teardown → `down.sh` (type the resource name it shows to confirm; `--yes` skips the prompt)
-- chat apps → connect claude.ai / ChatGPT to `https://<domain>/mcp` over OAuth; the consent secret is the `MCP_CONNECT_SECRET` the up script saved into `.env.production`
+- chat apps → connect claude.ai / ChatGPT to `https://<domain>/mcp` over OAuth; the consent secret is `MCP_CONNECT_SECRET` — **print its value on its own line here**, so they can copy it straight into the browser instead of opening `.env.production` to find it. If you don't have it (a deploy from an earlier session, a summary that scrolled past), read it out of the env file and print it.
 - coding agents → `uvx agno connect --url https://<domain>`
 
 ## 7. Owned-infrastructure inversions
