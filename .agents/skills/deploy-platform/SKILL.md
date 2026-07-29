@@ -28,6 +28,8 @@ The exit is always one command away — the down script deletes everything
 (it asks you to confirm; --yes skips).
 ```
 
+On a **redeploy** — Step 3's branch finds the platform already live — the map is three beats instead of six (push the change, prove it live, hand back), and the billed-resources sentence is already spent, so drop it.
+
 ## 1. Read the deploy layer
 
 Read [`AGENTS.md`](../../../AGENTS.md), the README's production/deploy section, and the deploy scripts under `scripts/` — they are the provider truth this skill conducts; never invent a step they don't have. Then pick the mode by **who provisions the target**, not by which files exist:
@@ -47,7 +49,16 @@ Four checks before anything is created:
 
 ## 3. Deploy
 
-Run the up script. It is built for this: every pause the script itself owns is TTY-guarded, so under your shell it skips cleanly and prints its recovery path instead of hanging (sub-CLIs it calls are why Step 2's unattended-run check matters). Narrate the phases as they stream. Expectations to set:
+**First, is this a first deploy or a redeploy?** Read `AGENTOS_URL` out of the production env file and, if it names a real domain, probe `<domain>/docs`. A 200 means this platform is already live and the up script is the wrong tool — it *provisions*, and re-running it can create a second project with its own database and domain. Take the redeploy path instead:
+
+- code changes → the redeploy script; env or secret changes → the env-sync script (both, in that order, if both changed)
+- skip Step 4 — the key already landed; Step 5's probes will say so if it didn't
+- run Step 5 as written, then Step 6 — verification is the same either way
+- manual-guide mode has no redeploy script: use the README's update path
+
+No answer from the probe — DNS failure, connection refused — means nothing is serving there (a torn-down project, a stale `AGENTOS_URL`): say so, and continue as a first deploy.
+
+Otherwise, run the up script. It is built for this: every pause the script itself owns is TTY-guarded, so under your shell it skips cleanly and prints its recovery path instead of hanging (sub-CLIs it calls are why Step 2's unattended-run check matters). Narrate the phases as they stream. Expectations to set:
 
 - First creates can be slow on some providers — twenty-plus minutes is normal; keep polling, don't declare failure early.
 - If the README names a browser step (e.g. applying a blueprint in the provider dashboard), relay those instructions first, then start the up script — its own poll absorbs the wait for the click.
