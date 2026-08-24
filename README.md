@@ -1,12 +1,20 @@
-# AgentOS: FastAPI for Agents
+# AgentOS: The Agent Platform That Builds Itself
 
-AgentOS turns your agents into a production API and MCP server. One AI backend that serves every frontend.
+AgentOS is a durable runtime for your agents. Build your own agents, multi-agent teams, and multi-step workflows. Trace every action. Enforce agent- and tool-level governance.
 
-1. **Your product.** Call the REST API from your app: run agents, stream responses, and manage sessions, memory, and knowledge.
-2. **AgentOS UI.** Chat with agents, build new ones, inspect sessions, traces, memory, and evals from the AgentOS UI at [os.agno.com](https://os.agno.com?utm_source=github&utm_medium=example-repo&utm_campaign=agentos-docker&utm_content=agentos-docker&utm_term=docker).
-3. **Coding agents.** Manage the full agent development lifecycle (create, extend, improve, eval, review) using the skills in [`.agents/skills/`](.agents/skills/).
-4. **AI apps.** Use your agents from Claude and ChatGPT using the MCP server at `/mcp`.
-5. **Chat interfaces.** Chat with your agents from Slack, WhatsApp, Telegram, and Discord.
+**Three ways to build agents, teams and workflows.**
+
+1. **Coding agent.** Point a coding agent at the skills in [`.agents/skills/`](.agents/skills/) and it runs the whole lifecycle for you: create, extend, improve, eval, review, deploy.
+2. **Natural language.** Ask the built-in Platform Builder and it builds the agent for you.
+3. **No-code Studio.** Build agents visually using the no-code AgentOS Studio.
+
+**Five ways to use what you build.**
+
+1. **AgentOS UI.** Chat with your agents and inspect sessions, traces, memory, and evals at [os.agno.com](https://os.agno.com?utm_source=github&utm_medium=example-repo&utm_campaign=agentos-docker&utm_content=agentos-docker&utm_term=docker).
+2. **AI apps.** Reach your agents from Claude and ChatGPT: paste your `/mcp` URL as a custom connector and approve it with your connect secret.
+3. **Chat interfaces.** Use your agents from Slack, WhatsApp, Telegram, and Discord.
+4. **Your product.** Call the REST API from your product: run agents, stream responses, and manage sessions, memory, and knowledge.
+5. **Your coding agents.** Work with your agents from Claude Code, Codex, or Cursor: `uvx agno connect` mints a token and registers `/mcp` in each of them for you.
 
 <img width="3298" height="2412" alt="AgentOS" src="https://github.com/user-attachments/assets/40a53a42-d4d2-402b-8e92-742609207957" />
 
@@ -23,16 +31,6 @@ Clone https://github.com/agno-agi/agentos-docker into a folder called agent-plat
 ```
 
 Your coding agent drives the whole flow: it checks Docker, sets up `.env`, boots the platform, verifies the MCP endpoint, connects the AgentOS UI, and builds your first agent with you. Prefer to drive yourself? See [Manual Setup](#manual-setup).
-
-## Built for agents
-
-This codebase comes with:
-
-- **Chief, your team's mascot.** "Chief, we're going with PlanetScale over RDS." "Chief, zak ran a good launch." Tell it anything — decisions, who's on what, what you learned — and it files the who and the why, learns how you work, and connects the dots when someone asks what's happening. Every frontend talks to the same Chief: what you tell it in Slack is there when you ask from claude.ai or ChatGPT.
-- **Two platform agents** that help you build and run the platform from your favorite AI apps like Claude and ChatGPT. **Agent Builder** creates agents, teams, and workflows using the AgentOS Studio. **Platform Manager** understands, monitors, and explains the platform: codebase questions, eval history, deployment checks, schedules.
-- **Coding-agent skills** let Claude Code, Codex, Cursor, and other coding agents build, test, and improve the platform automatically — see [Using the platform](#using-the-platform).
-
-Trace data, agent code, evals, and system logs are all available to coding agents, so the platform can inspect and improve itself end to end.
 
 ## Manual Setup
 
@@ -59,19 +57,31 @@ Confirm your AgentOS is running at [http://localhost:8000/docs](http://localhost
 1. Open [os.agno.com](https://os.agno.com?utm_source=github&utm_medium=example-repo&utm_campaign=agentos-docker&utm_content=agentos-docker&utm_term=docker) and sign in.
 2. Click **Connect OS**, enter `http://localhost:8000` as the URL, name it **Local AgentOS**, and connect.
 
-### Step 3: Build your first agent
+### Step 3: Meet Agno — and build your first agent through it
 
-1. Click **Chat** under the **Agent Builder** agent and try the first prompt: "Build an agent that tracks AI news and writes a daily brief". Go through the agent development process.
-2. Once created, click the **Refresh** button on the top right. You should now see the "Daily AI News Brief" agent in the **Agents** dropdown. Click the newly created agent.
-3. Ask: "What's new with Anthropic?"
+1. Click **Chat** under the **Agno** team and tell it what you're working on: "Hey Agno — I'm building a support bot".
+2. Now ask it to build: "Build an agent that tracks AI news and writes a daily brief".
+3. Click the **Refresh** button on the top right. You should now see the "Daily AI News Brief" agent in the **Agents** dropdown — chat with it directly, or just tell Agno: "Have the news agent brief me."
 
 ### Step 4: Check platform health
 
-Click **Chat** under **Platform Manager** and ask: "How healthy is the platform?" It answers from the codebase and runtime data — eval history, deployment checks, schedules, and the component you just built.
+Click **Chat** under **Platform Manager** and ask: "Is the platform healthy?" It answers from runtime data — eval history, deployment checks, schedules, and the run activity of the agent you just built.
 
-### Step 5: Meet Chief
+### Step 5: See how it's built
 
-Click **Chat** under **Chief** and tell it what you're working on: "Hey Chief — I'm building a support bot." It files the who and what as entities, the why as notes, and what it learns about you stays yours. From then on, tag it in from anywhere — this UI, Slack, claude.ai, ChatGPT — and ask "Chief, what's happening?": same thread everywhere.
+Click **Chat** under **Platform Engineer** and ask: "Tell me about this AgentOS." It reads the repo and gives you the tour — the agents, the skills, the wiring — grounded in real files. Any time you wonder how something works, this is the agent that knows.
+
+### Step 6: Make it yours
+
+Your cloned repo points at this public template. Make it your own:
+
+```sh
+git remote rename origin upstream    # keep the template connected for updates
+git remote add origin <your-private-repo-url>
+git push -u origin main
+```
+
+Create the private repo first ([github.com/new](https://github.com/new), or `gh repo create <name> --private`). `upstream` stays connected, so `git pull upstream main` brings in template updates whenever you want them.
 
 ## Run in production
 
@@ -119,7 +129,7 @@ Token-Based Auth gives you three things:
 
 1. **No public access.** The server rejects requests without a valid token.
 2. **Per-request identity.** Middleware parses the token and extracts the `user_id`, `session_id`, and custom claims. Each request is tied to a user and session, giving you auditability and traceability.
-3. **Granular permissions.** User tokens can run an agent and view their own sessions. Admin tokens read everyone's sessions and test any agent.
+3. **Granular permissions.** Scopes on the token decide what each caller can do — run agents, read sessions, manage the platform. Admin tokens can do everything; scoped tokens get exactly what their claims grant.
 
 Mint the key at os.agno.com against your public URL:
 
@@ -178,7 +188,7 @@ Env changes are the same command without `--build` — compose recreates the con
 
 ### Opting out of JWT (not recommended)
 
-Set `authorization=False` in [`app/main.py`](app/main.py) and restart. Use this only inside a private network behind another auth layer. Without it, anyone who finds your public URL can access your platform.
+Change `authorization=runtime_env != "dev"` to `authorization=False` in [`app/main.py`](app/main.py) and restart. Use this only inside a private network behind another auth layer. Without it, anyone who finds your public URL can access your platform.
 
 ## Using the platform
 
@@ -214,7 +224,7 @@ python -m evals --name <case>    # one case while iterating
 python -m evals -v               # stream the full run with rich panels
 ```
 
-If a case fails, run **`/eval-and-improve`** — it diagnoses each failure, fixes what's in scope, and loops until green. And when you build an agent of your own, **`/create-evals`** writes its coverage: it mines your real sessions for scenarios and adds cases the scheduled eval run watches from then on.
+If a case fails, run **`/eval-and-improve`** — it diagnoses each failure, fixes what's in scope, and loops until green. And when you build an agent of your own, **`/create-evals`** writes its coverage: it mines your real sessions for scenarios and adds cases tagged `smoke`, which the daily run-evals schedule picks up. That schedule ships **disabled** because it spends model calls — enable it from the AgentOS UI when you want the nightly watch.
 
 ### Maintain
 
@@ -251,12 +261,12 @@ can you access my agentos mcp?
 | `AGENTOS_URL` | no | `http://127.0.0.1:8000` | Scheduler base URL. In production, set it in `.env` to your public URL (domain or tunnel); `compose.prod.yaml` passes it through. Also the public origin OAuth metadata derives from when `MCP_CONNECT_SECRET` is set. |
 | `MCP_CONNECT_SECRET` | no | none | If set (≥16 chars, e.g. `openssl rand -base64 32`), `/mcp` becomes its own OAuth 2.1 authorization server so claude.ai and ChatGPT (web) can connect; connecting asks for this secret on a consent page. Requires `AGENTOS_URL`. Set it in `.env` — dev reads the same file, so it gates the local `/mcp` too. PAT and JWT bearers keep working alongside. |
 | `AGENTOS_MCP_SIGNING_KEY` | no | none | Optional high-entropy signing-key material (≥32 chars) for OAuth tokens. Unset, a strong key is generated and persisted in the database. Rotating it invalidates outstanding tokens. |
-| `ENABLE_DEPLOY_CHECK` | no | `True` | The reference deployment-check cron runs daily by default. Set `False` to disable; the workflow is runnable on demand regardless. |
+| `ENABLE_DEPLOY_CHECK` | no | `True` | The reference deployment-check cron runs daily by default. This env var owns the schedule's toggle (re-asserted on every boot); the workflow is runnable on demand regardless. |
 | `EVALS_TAG` | no | `smoke` | Eval tag run by the run-evals workflow. |
 | `EVALS_CASE_TIMEOUT_SECONDS` | no | `90` | Default per-case timeout for run-evals runs; applies only to cases that don't set their own `timeout_seconds`. |
-| `EVALS_SUITE_TIMEOUT_SECONDS` | no | `900` | Whole-suite timeout for run-evals runs; per-case timeouts are the granular limit. The default bounds the `smoke` tag's worst case (incl. builder-case teardown). |
-| `PARALLEL_API_KEY` | no | none | Authenticates Chief's and the Studio registry's web search tools (Parallel SDK when set; keyless MCP fallback). |
-| `SLACK_BOT_TOKEN` / `SLACK_SIGNING_SECRET` | no | none | Both must be set to enable the Slack interface. |
+| `EVALS_SUITE_TIMEOUT_SECONDS` | no | derived | Whole-suite timeout for run-evals runs; per-case timeouts are the granular limit. Unset, it is derived from the cases the tag selects. Set it to override. |
+| `PARALLEL_API_KEY` | no | none | Authenticates Agno's and the Studio registry's web search tools (Parallel SDK when set; keyless MCP fallback). |
+| `SLACK_BOT_TOKEN` / `SLACK_SIGNING_SECRET` | no | none | Both must be set to enable the Slack interface. The bot token also lights up the registry's send-only Slack toolkit for built agents. |
 | `DB_HOST` / `DB_PORT` / `DB_USER` / `DB_PASS` / `DB_DATABASE` | no | matches compose | Postgres connection. |
 | `DB_DRIVER` | no | `postgresql+psycopg` | SQLAlchemy driver. |
 | `AGNO_DEBUG` | no | `False` | If `True`, Agno emits verbose debug logs. Compose sets this for dev. |
