@@ -187,7 +187,10 @@ to port 8000 on your host. Use a reverse proxy on the host or an HTTPS tunnel.
 
 Production Compose reads `.env`. Set `OPENAI_API_KEY`, `AGENTOS_URL` to your
 public HTTPS URL, a strong `DB_PASS`, and `MCP_CONNECT_SECRET` (generate one with
-`openssl rand -base64 32`).
+`openssl rand -base64 32`). For Claude Engineer, set `ANTHROPIC_API_KEY` or
+`CLAUDE_CODE_OAUTH_TOKEN`. Compose passes the file through unchanged, so delete
+any `sk-***` placeholder line you are not filling in: a placeholder reaches the
+container as a real value and the matching engineer fails on authentication.
 
 For an existing database, changing `DB_PASS` in `.env` does not change the database
 password. Update the database password separately; do not delete the data volume.
@@ -238,10 +241,11 @@ docker compose -f compose.yaml -f compose.prod.yaml down
 ### Sandbox storage
 
 Local Docker sandbox instructions are in the [sandbox guide](docs/sandboxes.md).
-The production deployment does not provision sandbox checkpoint storage.
-Before enabling AWS AgentCore, configure persistent storage mounted at `/data`
-on the API service and give it AWS access. If your deployment cannot provide
-that mount, leave AgentCore disabled. Keep one API instance.
+The production deployment does not attach sandbox checkpoint storage by default.
+Before enabling AWS AgentCore, enable the commented `agentos-checkpoints` volume in
+[compose.prod.yaml](compose.prod.yaml) so it is mounted at `/data` on the API
+container, put the AWS credentials AgentCore needs in `.env`, and restart. If you
+skip the volume, leave AgentCore disabled. Keep one API instance.
 
 ## Verify and develop
 
