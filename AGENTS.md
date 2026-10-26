@@ -27,7 +27,7 @@ workflows in `.agents/skills/`; `.claude/skills` links to that directory.
 | Add an agent | [create-agent](.agents/skills/create-agent/SKILL.md) |
 | Change an agent or add a Studio capability | [extend-agent](.agents/skills/extend-agent/SKILL.md) |
 | Add behavioral coverage | [create-evals](.agents/skills/create-evals/SKILL.md) |
-| Repair evals or explore and improve agent behavior | [improve](.agents/skills/improve/SKILL.md) |
+| Harden an agent with simulations and targeted fixes | [improve](.agents/skills/improve/SKILL.md) |
 | Review repository consistency and public readiness | [review-and-improve](.agents/skills/review-and-improve/SKILL.md) |
 | Deploy or change production configuration | [deploy-platform](.agents/skills/deploy-platform/SKILL.md) |
 
@@ -139,8 +139,8 @@ supports sandbox HTTP admission through the durable PostgreSQL queue with sessio
 
 Use the deployment skill and [deployment instructions](README.md#deploy-in-production).
 Deployment target: your own Docker host. Preserve its deploy layer and provider-specific
-settings. Start with one API instance, persistent PostgreSQL and production token
-verification. Follow docs/scaling.md when adding replicas.
+settings. The initial deployment uses one API instance, persistent PostgreSQL and
+production token verification. Follow docs/scaling.md when adding replicas.
 Use the production env file described in the README; never deploy `RUNTIME_ENV=dev`.
 Review existing resources before provisioning and verify deployment after changes.
 
