@@ -27,14 +27,14 @@ workflows in `.agents/skills/`; `.claude/skills` links to that directory.
 | Add an agent | [create-agent](.agents/skills/create-agent/SKILL.md) |
 | Change an agent or add a Studio capability | [extend-agent](.agents/skills/extend-agent/SKILL.md) |
 | Add behavioral coverage | [create-evals](.agents/skills/create-evals/SKILL.md) |
-| Repair evals or explore and improve agent behavior | [eval-and-improve](.agents/skills/eval-and-improve/SKILL.md) |
+| Harden an agent with simulations and targeted fixes | [improve](.agents/skills/improve/SKILL.md) |
 | Review repository consistency and public readiness | [review-and-improve](.agents/skills/review-and-improve/SKILL.md) |
 | Deploy or change production configuration | [deploy-platform](.agents/skills/deploy-platform/SKILL.md) |
 
 ## Where changes belong
 
 - `app/main.py`: AgentOS registration, shared database, OS Manager, Company and queue.
-- `app/interfaces.py`: MCP OAuth, `agno` and built-in MCP tools, optional Slack.
+- `app/interfaces.py`: MCP OAuth, `os_manager` and built-in MCP tools, optional Slack.
 - `app/company.py`: Product and Source declarations. `app/config.yaml`: component
   descriptions, prompts and optional additional Products.
 - `app/registry.py`: Studio palette, web tools, shared knowledge, learning and notes.
@@ -112,19 +112,19 @@ back to server execution. Keep provider configuration in `app/sandbox.py` and ag
 declarations in `agents/engineers.py`.
 
 Select the provider by returning `None`, `docker_sandbox()`, or
-`agentcore_sandbox("runtime-arn")` from `sandbox_provider()`. Sandbox selection, image
+`agentcore_sandbox("runtime-arn", "checkpoint-bucket")` from `sandbox_provider()`. Sandbox selection, image
 and runtime ARN are code settings, not environment switches. Supply optional Bedrock
 settings or private-repository credentials explicitly through the provider's `env`;
 never put credential values in source. Agno forwards the harness model credentials.
 
 For Docker engineering, run the API on the host using the [sandbox setup guide](docs/sandboxes.md#local-docker-sandbox).
 Build the sandbox with `docker build --target sandbox --load -t agno-sandbox:local .`.
-Development checkpoints use the absolute project `tmp/checkpoints` path. Production
-AgentCore requires a persistent `/data` mount; provision its runtime with AWS tooling.
-The deploy layer does not attach `/data` checkpoint storage by default; `compose.prod.yaml`
-carries a commented `agentos-checkpoints` named volume for `/data`. Enable it and put AWS
-credentials in `.env` before enabling AgentCore; otherwise leave it disabled. Compose passes
-`.env` through unchanged, so `sk-***` placeholder lines must be filled or deleted.
+Development checkpoints use the absolute project `tmp/checkpoints` path and survive
+only while those files remain. Hosted AgentCore checkpoints use S3; no API disk is
+required. Configure the bucket/prefix explicitly and give the API appropriate AWS
+access, following docs/sandboxes.md. Do not put checkpoint archives in PostgreSQL.
+See [docs/scaling.md](docs/scaling.md) for current scaling guidance.
+Local source mounts and PostgreSQL volumes remain.
 
 `REPOSITORY` in `app/sandbox.py` defaults to `None`. Set it to a `Repository` with
 the user's URL and branch before enabling a sandbox; startup rejects a sandbox
@@ -139,7 +139,8 @@ supports sandbox HTTP admission through the durable PostgreSQL queue with sessio
 
 Use the deployment skill and [deployment instructions](README.md#deploy-in-production).
 Deployment target: your own Docker host. Preserve its deploy layer and provider-specific
-settings. Keep one API instance, persistent PostgreSQL and production token verification.
+settings. The initial deployment uses one API instance, persistent PostgreSQL and
+production token verification. Follow docs/scaling.md when adding replicas.
 Use the production env file described in the README; never deploy `RUNTIME_ENV=dev`.
 Review existing resources before provisioning and verify deployment after changes.
 

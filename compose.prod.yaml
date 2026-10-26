@@ -20,12 +20,6 @@ services:
   agentos-api:
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     volumes: !reset []
-    # AgentCore sandbox checkpoints need a persistent /data mount, which
-    # app/sandbox.py refuses to run without (docs/sandboxes.md). Replace the
-    # reset above with this named volume before enabling agentcore_sandbox(),
-    # and uncomment the top-level `volumes:` block at the end of this file.
-    # volumes: !override
-    #   - agentos-checkpoints:/data
     environment:
       RUNTIME_ENV: prd
       AGNO_DEBUG: "False"
@@ -41,8 +35,3 @@ services:
   agentos-db:
     ports: !override
       - "127.0.0.1:5432:5432"
-
-# Named volume for AgentCore checkpoints — pair with the mount above.
-# `docker compose down` keeps it; `down -v` deletes it with the database.
-# volumes:
-#   agentos-checkpoints:

@@ -1,14 +1,14 @@
 [project]
-name = "agentos-docker"
+name = "AgentOS"
 version = "1.0.0"
-description = "AgentOS: a production runtime for agents. Self-hosted Docker sibling of the agentos template family."
+description = "AgentOS: a self-improving agent platform"
 requires-python = ">=3.14,<4"
 readme = "README.md"
 license-files = ["LICENSE"]
 authors = [{ name = "Agno", email = "hello@agno.com" }]
 
 dependencies = [
-  "agno[os,mcp,slack,pgvector,psycopg,csv,excel,docx,pdf,website,claude,codex,agentcore-sandbox]==3.1.10",
+  "agno[os,mcp,slack,pgvector,psycopg,csv,excel,docx,pdf,reportlab,website,claude,codex,agentcore-sandbox]==3.1.10",
   "cel-python",
   "openai",
   "parallel-web",
