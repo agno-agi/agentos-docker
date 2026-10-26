@@ -5,7 +5,7 @@ Build agents for your product, your team, or yourself. Run them in your own clou
 keep their data in your own database, and manage them from [AgentOS](https://os.agno.com).
 
 Built with [Agno](https://github.com/agno-agi/agno), this template gives you a working
-agent platform that you can run locally or deploy to your own Docker host.
+agent platform that you can run locally or deploy to self-hosted Docker.
 
 **Three ways to build agents.**
 
@@ -42,9 +42,38 @@ to follow [setup-platform](.agents/skills/setup-platform/SKILL.md) in that folde
 
 Prefer to set it up yourself? Follow the steps below.
 
+## Engineers
+
+The platform includes **Claude Engineer** and **Codex Engineer**. They can read your
+code, make changes, and run commands.
+
+Chat with either engineer in AgentOS, or ask OS Manager to use one:
+
+> Ask Codex Engineer to review this project and suggest improvements. Don't change any files yet.
+
+Codex uses the `OPENAI_API_KEY` you added during setup. To use Claude, add
+`ANTHROPIC_API_KEY` to `.env`. After changing `.env`, run `docker compose up -d` again.
+
+By default, engineers work in this project's folder. With Docker Compose, they
+can change files in your local checkout, including the code serving the platform.
+Review those changes before committing them.
+
+For engineers to work in a separate environment, configure a sandbox with your
+own repository URL and branch:
+
+- [Local Docker sandbox](docs/sandboxes.md#local-docker-sandbox): run the API on
+  your computer and engineering work in a separate Docker container.
+- [AWS AgentCore sandbox](docs/sandboxes.md#aws-agentcore-sandbox): run engineering
+  work remotely when the platform is deployed. The API host needs AWS credentials
+  and an S3 bucket for checkpoints. No disk is attached to the API service.
+
+Both engineers stay available with either setup. Sandboxes are optional and are
+not enabled by the default Compose configuration.
+
 ## Run locally
 
-You'll need Git, Docker with Compose, and an OpenAI API key. Make sure Docker is running.
+You'll need Git, Docker with Compose, an OpenAI API key and an Anthropic API key
+for Claude Engineer. Make sure Docker is running.
 Run the commands below in a terminal.
 
 ### 1. Start the platform
@@ -55,7 +84,9 @@ cd agent-platform
 cp example.env .env
 ```
 
-Open `.env` and set `OPENAI_API_KEY`. Then start the platform:
+Open `.env` and set `OPENAI_API_KEY` and `ANTHROPIC_API_KEY` so both engineers can
+authenticate. For Claude Code OAuth instead, remove `ANTHROPIC_API_KEY` and set
+`CLAUDE_CODE_OAUTH_TOKEN`. Then start the platform:
 
 ```sh
 docker compose up -d --build
@@ -99,7 +130,7 @@ Ask your coding agent to follow the relevant skill:
 | Build an agent | [/create-agent](.agents/skills/create-agent/SKILL.md) |
 | Add a tool, change behavior, or fix a bug | [/extend-agent](.agents/skills/extend-agent/SKILL.md) |
 | Write tests for your agent's answers | [/create-evals](.agents/skills/create-evals/SKILL.md) |
-| Fix failing tests or try more scenarios | [/eval-and-improve](.agents/skills/eval-and-improve/SKILL.md) |
+| Harden an agent with simulations and targeted fixes | [/improve](.agents/skills/improve/SKILL.md) |
 | Check the repo before sharing or releasing it | [/review-and-improve](.agents/skills/review-and-improve/SKILL.md) |
 
 If you write an agent in Python, put it in `agents/` and add it to
@@ -134,27 +165,6 @@ schedule and run history in Company to see when a review will run and what it di
 Once they're saved in the database, update the saved Routine to change them;
 editing the Python file alone won't change an existing Routine.
 
-## Engineers
-
-The platform includes **Claude Engineer** and **Codex Engineer**. They can read your
-code, make changes, and run commands.
-
-Chat with either engineer in AgentOS, or ask OS Manager to use one:
-
-> Ask Codex Engineer to review this project and suggest improvements. Don't change any files yet.
-
-Codex uses the `OPENAI_API_KEY` you added during setup. To use Claude, add
-`ANTHROPIC_API_KEY` to `.env`. After changing `.env`, run `docker compose up -d` again.
-
-By default, engineers work in this project's folder. When running locally with
-Docker Compose, their file changes appear in your local checkout. Review those
-changes before committing them.
-
-You don't need to configure a sandbox or repository URL to get started.
-
-To have engineers work on a separate copy of your repository, follow the
-[sandbox setup guide](docs/sandboxes.md) for Docker or AWS AgentCore.
-
 ## Make it yours
 
 To save your work in your own GitHub repository, create an empty private repo.
@@ -178,7 +188,7 @@ If you use sandboxes, also set the repository URL and branch in
 ## Deploy in production
 
 Ask your coding agent to follow [deploy-platform](.agents/skills/deploy-platform/SKILL.md),
-or use the steps below. For an existing deployment, read the [upgrade guide](docs/upgrading.md) first.
+or use the steps below.
 
 You'll need Docker Compose 2.24.4 or newer and a stable public HTTPS URL routed
 to port 8000 on your host. Use a reverse proxy on the host or an HTTPS tunnel.
@@ -240,12 +250,18 @@ docker compose -f compose.yaml -f compose.prod.yaml down
 
 ### Sandbox storage
 
-Local Docker sandbox instructions are in the [sandbox guide](docs/sandboxes.md).
-The production deployment does not attach sandbox checkpoint storage by default.
-Before enabling AWS AgentCore, enable the commented `agentos-checkpoints` volume in
-[compose.prod.yaml](compose.prod.yaml) so it is mounted at `/data` on the API
-container, put the AWS credentials AgentCore needs in `.env`, and restart. If you
-skip the volume, leave AgentCore disabled. Keep one API instance.
+The API service needs no attached disk. Conversations, memories and Company work
+are stored in PostgreSQL. Without a sandbox, engineers run inside the API container;
+their edited files and native sessions can be lost on redeploy or replacement.
+Database conversation history does not reconstruct that working directory.
+
+For durable, isolated engineering, configure [AWS AgentCore and S3](docs/sandboxes.md#aws-agentcore-sandbox).
+S3 stores the last saved workspace and native-session checkpoint. Recovery does
+not preserve unfinished edits at the instant of a crash or replay external actions
+safely. AWS is optional for getting started. Local Docker isolation is also
+available in the [sandbox guide](docs/sandboxes.md#local-docker-sandbox).
+
+Before running multiple API instances, follow [Scaling](docs/scaling.md).
 
 ## Verify and develop
 
