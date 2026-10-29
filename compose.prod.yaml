@@ -22,6 +22,7 @@ services:
     volumes: !reset []
     environment:
       RUNTIME_ENV: prd
+      SANDBOX_PROVIDER: ${SANDBOX_PROVIDER:-agentcore}
       AGNO_DEBUG: "False"
       AGENTOS_URL: ${AGENTOS_URL:-http://127.0.0.1:8000}
       MCP_CONNECT_SECRET: ${MCP_CONNECT_SECRET:-}
