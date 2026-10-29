@@ -12,23 +12,23 @@
 # The `!reset` tag (Docker Compose v2.24+) removes the dev bind mount instead
 # of merging with it; `!override` (v2.24.4+) replaces the ports list below so
 # Postgres rebinds to 127.0.0.1 instead of gaining a second mapping.
-# Compose passes .env through unchanged, placeholders included: a copied
-# example.env ships ANTHROPIC_API_KEY=sk-*** (and OPENAI_API_KEY=sk-***), and
-# there is no script in front of the container to strip them. Fill each key
-# you use and delete the lines you don't before starting production.
+# Compose passes .env through unchanged, placeholders included. Replace the
+# OPENAI_API_KEY placeholder and fill any optional keys you enable before
+# starting production; there is no script that strips placeholder values.
 services:
   agentos-api:
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     volumes: !reset []
     environment:
       RUNTIME_ENV: prd
+      SANDBOX_PROVIDER: ${SANDBOX_PROVIDER:-agentcore}
       AGNO_DEBUG: "False"
       AGENTOS_URL: ${AGENTOS_URL:-http://127.0.0.1:8000}
       MCP_CONNECT_SECRET: ${MCP_CONNECT_SECRET:-}
 
-  # In dev, Postgres is published on all interfaces for GUI/psql convenience.
-  # In production that would expose the database to the internet (Docker's
-  # iptables rules bypass ufw-style host firewalls), so bind it to loopback:
+  # Keep Postgres bound to loopback for host-side GUI/psql access.
+  # Publishing it on all interfaces would expose it through Docker's
+  # iptables rules, which can bypass ufw-style host firewalls:
   # containers still reach it over the compose network, and host-side tools
   # (psql, python -m evals) still connect via localhost. Set a strong DB_PASS
   # in .env — the dev default is ai/ai.
