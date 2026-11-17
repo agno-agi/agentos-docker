@@ -36,7 +36,7 @@ Read the matching skill in `.agents/skills/` before starting; `.claude/skills` l
 | `app/config.yaml` | Descriptions and quick prompts shown in the UI. Every quick prompt is ten words or fewer. |
 | `app/registry.py` | What Studio can build with, plus web tools, shared knowledge, learning and notes. |
 | `app/settings.py` | Model factories. |
-| `app/interfaces.py` | MCP tools and OAuth; optional Slack. |
+| `app/interfaces.py` | MCP tools and OAuth; optional Slack and the role Slack members get under authorization. |
 | `app/sandbox.py` | Sandbox switch, provider, repository and checkpoints. |
 | `agents/` | Application agents, including the Claude and Codex coding agents. |
 | `db/` | The shared PostgreSQL database and knowledge creation. |
