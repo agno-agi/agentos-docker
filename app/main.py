@@ -12,7 +12,7 @@ from agno.os import AgentOS, CompanyConfig, OSManager
 # from agents.engineers import create_claude_engineer
 # from agents.engineers import create_codex_engineer
 from app.company import products
-from app.interfaces import attach_interfaces, mcp_auth
+from app.interfaces import attach_interfaces, authorization, mcp_auth
 from app.registry import registry, shared_knowledge, shared_learning
 from app.settings import super_agent_model
 from db import get_postgres_db
@@ -31,7 +31,7 @@ agent_os = AgentOS(
     user_directory=True,
     scheduler_base_url=agentos_url,
     mcp_auth=mcp_auth(agentos_url),
-    authorization=runtime_env != "dev",
+    authorization=authorization() if runtime_env != "dev" else False,
     manager=OSManager(
         root=agentos_root,
         model=super_agent_model(),

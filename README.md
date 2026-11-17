@@ -118,7 +118,7 @@ Ask your coding agent to follow
 [/deploy-platform](.agents/skills/deploy-platform/SKILL.md). This template targets self-hosted Docker.
 You’ll need Docker Compose 2.24.4 or newer and a public HTTPS reverse proxy or tunnel to port 8000.
 
-Production reads `.env`. Set `OPENAI_API_KEY`, a strong `DB_PASS`, the public `AGENTOS_URL` and `MCP_CONNECT_SECRET`. Set `JWT_VERIFICATION_KEY` before starting; quote the full multiline PEM. Changing `DB_PASS` does not rotate an existing database password. The production override removes the development bind mount, enables authorization and keeps ports on loopback.
+Production reads `.env`. Set `OPENAI_API_KEY`, a strong `DB_PASS`, the public `AGENTOS_URL` and `MCP_CONNECT_SECRET`. Set `JWT_VERIFICATION_KEY` before starting; quote the full multiline PEM. Changing `DB_PASS` does not rotate an existing database password. The production override removes the development bind mount, enables authorization and keeps ports on loopback. Under authorization, Slack members get the `slack-member` role in `app/interfaces.py`, and os.agno.com sign-ins keep their token scopes.
 
 Connect your public HTTPS URL as a **Live** connection at [os.agno.com](https://os.agno.com).
 In **Settings → OS Security**, enable JWT authorization and copy the public verification

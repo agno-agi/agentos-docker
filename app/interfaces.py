@@ -2,7 +2,7 @@
 
 from os import getenv
 
-from agno.os import AgentOS, AgentOSBuiltinAuth, MCPConfig
+from agno.os import AgentOS, AgentOSBuiltinAuth, Authorization, MCPConfig
 
 
 def mcp_auth(agentos_url: str) -> AgentOSBuiltinAuth | None:
@@ -11,6 +11,41 @@ def mcp_auth(agentos_url: str) -> AgentOSBuiltinAuth | None:
     if not secret:
         return None
     return AgentOSBuiltinAuth(url=agentos_url, secret=secret)
+
+
+def authorization() -> Authorization:
+    """Give Slack members the slack-member role; os.agno.com sign-ins keep their token scopes."""
+    authz = Authorization(trust_token_scopes=True)
+    authz.define_role(
+        "slack-member",
+        [
+            "agents:read",
+            "agents:run",
+            "teams:run",
+            "workflows:run",
+            "company:read",
+            "products:read",
+            "products:write",
+            "routines:write",
+            "projects:read",
+            "projects:write",
+            "tasks:read",
+            "tasks:write",
+            "wiki:read",
+            "wiki:write",
+            "sources:read",
+            "sources:write",
+            "decisions:read",
+            "decisions:write",
+            "components:read",
+            "components:write",
+            "registry:read",
+            "schedules:read",
+            "schedules:write",
+            "config:read",
+        ],
+    )
+    return authz
 
 
 def attach_interfaces(agent_os: AgentOS) -> None:
@@ -39,6 +74,7 @@ def attach_interfaces(agent_os: AgentOS) -> None:
                 streaming=True,
                 signing_secret=secret,
                 resolve_user_identity=True,
+                default_role="slack-member",
                 loading_text="Pulling the thread...",
             )
         )
