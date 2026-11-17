@@ -25,6 +25,8 @@ def authorization() -> Authorization:
             "workflows:run",
             "company:read",
             "products:read",
+            "products:write",
+            "routines:write",
             "projects:read",
             "projects:write",
             "tasks:read",
